@@ -9,7 +9,7 @@ from encoder import Encoder
 from detector import Detector
 
 
-threshold = 0.5
+threshold = 0.05
 
 
 net = Detector(pretrained=False)
