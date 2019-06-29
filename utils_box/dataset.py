@@ -259,9 +259,9 @@ if __name__ == '__main__':
     size = 641
     area_th = 25
     batch_size = 8
-    csv_root  = 'D:\\dataset\\VOC0712_trainval\\JPEGImages'
-    csv_list  = '../data/voc_trainval_l.txt'
-    csv_name  = '../data/voc_name.txt'
+    csv_root  = 'D:\\dataset\\coco17\\images'
+    csv_list  = '../data/coco_train2017.txt'
+    csv_name  = '../data/coco_name.txt'
 
     transform = transforms.Compose([
         transforms.ColorJitter(brightness=0.03,contrast=0.03,saturation=0.03,hue=0.03),
@@ -284,7 +284,7 @@ if __name__ == '__main__':
         print(imgs.shape)
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, scales[i])
-        idx = int(input('idx:'))
-        # idx = 0
+        # idx = int(input('idx:'))
+        idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         break

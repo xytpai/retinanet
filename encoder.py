@@ -126,6 +126,8 @@ class Encoder:
             iou = box_iou(self.anchors_yxyx, label_box[b]) # [an, Nb]
             
             if (iou.shape[1] <= 0):
+                print('Find an image that does not contain objects')
+                label_class_out[:] = 0
                 label_class_out.append(label_class_out_b)
                 label_box_out.append(label_box_out_b)
                 continue

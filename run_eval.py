@@ -8,12 +8,19 @@ from encoder import Encoder
 from detector import Detector
 from loss import loss_detection
 
-threshold = 0.5
+
 with open('train.json', 'r') as load_f:
     cfg = json.load(load_f)
-
-
 net = Detector(pretrained=False)
+
+
+# TODO: 
+# net.nms_th = 0.05
+# cfg['device'] = [0,1,2,3,9]
+# cfg['nbatch_eval'] = 30
+###############
+
+
 device_out = 'cuda:%d' % (cfg['device'][0])
 net.load_state_dict(torch.load('net.pkl', map_location=device_out))
 net = torch.nn.DataParallel(net, device_ids=cfg['device'])
@@ -32,7 +39,7 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
 
 encoder = Encoder(net.module.a_hw, net.module.scales, net.module.first_stride, 
             train_iou_th=net.module.iou_th, size=net.module.img_size,
-            nms=net.module.nms, nms_th=threshold, nms_iou=net.module.nms_iou,
+            nms=net.module.nms, nms_th=net.module.nms_th, nms_iou=net.module.nms_iou,
             max_detections=net.module.max_detections)
 
 
@@ -68,11 +75,20 @@ with torch.no_grad():
         res = eval_detection(pred_bboxes, pred_labels, 
                 pred_scores, gt_bboxes, gt_labels, iou_th=iou_th)
         ap_res.append(res)
+
     ap_sum = 0.0
     for i in range(len(ap_res)):
         ap_sum += float(ap_res[i]['map'])
     map_mean = ap_sum / float(len(ap_res))
     map_50 = float(ap_res[0]['map'])
     map_75 = float(ap_res[5]['map'])
-    print('map_mean:', map_mean, 'map_50:', map_50, 'map_75:', map_75)
+    
+    print('map_mean')
+    print(map_mean)
+    print('map_50')
+    print(map_50)
+    print('map_75')
+    print(map_75)
+    print('ap@.5')
+    print(ap_res[0]['ap'])
 

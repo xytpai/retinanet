@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import torchvision.models as models
+
 
 log = np.load('log.npy')
 
@@ -18,5 +18,12 @@ plt.plot(map_50, color='b', label='map_50')
 plt.plot(map_75, color='g', label='map_75')
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                ncol=3, mode='expand', borderaxespad=0.)
-plt.show()
+               
+print('map_mean')
+print(map_mean)
+print('map_50')
 print(map_50)
+print('map_75')
+print(map_75)
+plt.show()
+

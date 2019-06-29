@@ -9,10 +9,14 @@ from encoder import Encoder
 from detector import Detector
 
 
-threshold = 0.05
-
-
 net = Detector(pretrained=False)
+
+
+# TODO:
+# net.nms_th = 0.05
+########
+
+
 net.load_state_dict(torch.load('net.pkl', map_location='cpu'))
 net.eval()
 transform = transforms.Compose([
@@ -20,7 +24,7 @@ transform = transforms.Compose([
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 encoder = Encoder(net.a_hw, net.scales, net.first_stride, 
             train_iou_th=net.iou_th, size=net.img_size,
-            nms=net.nms, nms_th=threshold, nms_iou=net.nms_iou,
+            nms=net.nms, nms_th=net.nms_th, nms_iou=net.nms_iou,
             max_detections=net.max_detections)
 with open('train.json', 'r') as load_f:
     cfg = json.load(load_f)

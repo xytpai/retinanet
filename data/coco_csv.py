@@ -38,8 +38,9 @@ for idx in range(len(image_ids)):
         boxes.append(np.array(a['bbox']))
         labels.append(np.array(coco_labels_inverse[a['category_id']]))
     if len(boxes) <= 0:
-        boxes = [np.array([0,0,0,0])]
-        labels = [np.array([0])]
+        continue
+        # boxes = [np.array([0,0,0,0])]
+        # labels = [np.array([0])]
     boxes = np.stack(boxes)
     labels = np.stack(labels)
     boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
