@@ -24,7 +24,7 @@ for c in categories:
         labels[value] = key
 for key in labels:
     LABEL_NAMES.append(labels[key])
-
+valid_image_ids=[]
 for idx in range(len(image_ids)):
     image_info = coco.loadImgs(image_ids[idx])[0]
     image = image_info['file_name']
@@ -41,6 +41,7 @@ for idx in range(len(image_ids)):
         continue
         # boxes = [np.array([0,0,0,0])]
         # labels = [np.array([0])]
+    valid_image_ids.append(image_ids[idx])
     boxes = np.stack(boxes)
     labels = np.stack(labels)
     boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
@@ -62,7 +63,7 @@ if set_name == 'val2017':
     coco_table = {
         'coco_labels':coco_labels, 
         'coco_labels_inverse':coco_labels_inverse, 
-        'val_image_ids':image_ids
+        'val_image_ids':valid_image_ids
     }
     json_str = json.dumps(coco_table, indent=4)
     with open('coco_table.json', 'w') as json_file:
