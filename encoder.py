@@ -71,7 +71,8 @@ class Encoder:
         scales=3, 
         first_stride=8, 
         train_iou_th=(0.3, 0.5), 
-        size=641, 
+        train_size=641, 
+        eval_size=641,
         nms=True, 
         nms_th=0.05, 
         nms_iou=0.5,
@@ -81,17 +82,24 @@ class Encoder:
         self.scales = scales
         self.first_stride = first_stride
         self.train_iou_th = train_iou_th
-        self.size = size
+        self.train_size = train_size
+        self.eval_size = eval_size
         self.nms = nms
         self.nms_th = nms_th
         self.nms_iou = nms_iou
         self.max_detections = max_detections
 
-        self.anchors_yxyx, self.anchors_yxhw = \
-            gen_anchors(self.a_hw, self.scales, self.size, self.first_stride)
-        self.an = self.anchors_yxyx.shape[0]
-        self.ay_ax = self.anchors_yxhw[:, :2]
-        self.ah_aw = self.anchors_yxhw[:, 2:]
+        self.train_anchors_yxyx, self.train_anchors_yxhw = \
+            gen_anchors(self.a_hw, self.scales, self.train_size, self.first_stride)
+        self.train_an = self.train_anchors_yxyx.shape[0]
+        self.train_ay_ax = self.train_anchors_yxhw[:, :2]
+        self.train_ah_aw = self.train_anchors_yxhw[:, 2:]
+
+        self.eval_anchors_yxyx, self.eval_anchors_yxhw = \
+            gen_anchors(self.a_hw, self.scales, self.eval_size, self.first_stride)
+        self.eval_an = self.eval_anchors_yxyx.shape[0]
+        self.eval_ay_ax = self.eval_anchors_yxhw[:, :2]
+        self.eval_ah_aw = self.eval_anchors_yxhw[:, 2:]
 
     def encode(self, label_class, label_box):
         '''
@@ -121,12 +129,12 @@ class Encoder:
 
         for b in range(len(label_class)):
 
-            label_class_out_b = torch.full((self.an,), -1).long()
-            label_box_out_b = torch.zeros(self.an, 4)
-            iou = box_iou(self.anchors_yxyx, label_box[b]) # [an, Nb]
+            label_class_out_b = torch.full((self.train_an,), -1).long()
+            label_box_out_b = torch.zeros(self.train_an, 4)
+            iou = box_iou(self.train_anchors_yxyx, label_box[b]) # [an, Nb]
             
             if (iou.shape[1] <= 0):
-                print('Find an image that does not contain objects')
+                # print('Find an image that does not contain objects')
                 label_class_out_b[:] = 0
                 label_class_out.append(label_class_out_b)
                 label_box_out.append(label_box_out_b)
@@ -151,8 +159,8 @@ class Encoder:
 
             # get box targets 2
             lb_yxyx_2 = label_box[b] # [Nb, 4]
-            ay_ax = self.ay_ax[anchors_select]
-            ah_aw = self.ah_aw[anchors_select]
+            ay_ax = self.train_ay_ax[anchors_select]
+            ah_aw = self.train_ah_aw[anchors_select]
             lb_ymin_xmin_2, lb_ymax_xmax_2 = lb_yxyx_2[:, :2], lb_yxyx_2[:, 2:]
             lbh_lbw_2 = lb_ymax_xmax_2 - lb_ymin_xmin_2
             lby_lbx_2 = (lb_ymin_xmin_2 + lb_ymax_xmax_2)/2.0
@@ -162,8 +170,8 @@ class Encoder:
 
             # get box targets 1
             lb_yxyx_1 = label_box[b][label_select_1] # [S, 4]
-            ay_ax = self.ay_ax[anchors_pos_mask]
-            ah_aw = self.ah_aw[anchors_pos_mask]
+            ay_ax = self.train_ay_ax[anchors_pos_mask]
+            ah_aw = self.train_ah_aw[anchors_pos_mask]
             lb_ymin_xmin_1, lb_ymax_xmax_1 = lb_yxyx_1[:, :2], lb_yxyx_1[:, 2:]
             lbh_lbw_1 = lb_ymax_xmax_1 - lb_ymin_xmin_1
             lby_lbx_1 = (lb_ymin_xmin_1 + lb_ymax_xmax_1)/2.0
@@ -215,8 +223,8 @@ class Encoder:
         for b in range(cls_out.shape[0]):
             f1_f2 = reg_out[b, :, :2]
             f3_f4 = reg_out[b, :, 2:]
-            y_x = f1_f2 * self.ah_aw + self.ay_ax
-            h_w = f3_f4.exp() * self.ah_aw
+            y_x = f1_f2 * self.eval_ah_aw + self.eval_ay_ax
+            h_w = f3_f4.exp() * self.eval_ah_aw
             ymin_xmin = y_x - h_w/2.0
             ymax_xmax = y_x + h_w/2.0
             ymin_xmin_ymax_xmax = torch.cat([ymin_xmin, ymax_xmax], dim=1)
@@ -254,8 +262,8 @@ class Encoder:
             reg_preds_b = reg_preds_b[keep]
 
             reg_preds_b[:, :2] = reg_preds_b[:, :2].clamp(min=0)
-            reg_preds_b[:, 2] = reg_preds_b[:, 2].clamp(max=self.size-1)
-            reg_preds_b[:, 3] = reg_preds_b[:, 3].clamp(max=self.size-1)
+            reg_preds_b[:, 2] = reg_preds_b[:, 2].clamp(max=self.eval_size-1)
+            reg_preds_b[:, 3] = reg_preds_b[:, 3].clamp(max=self.eval_size-1)
 
             if scale_shift is not None:
                 reg_preds_b /= float(scale_shift)

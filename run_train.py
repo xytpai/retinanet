@@ -28,14 +28,14 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file'], 
-    size=net.module.img_size, train=True, transform=transform, 
+    size=net.module.train_size, train=True, transform=transform, 
     boxarea_th = cfg['boxarea_th'], 
     img_scale_min = cfg['img_scale_min'], 
     crop_scale_min = cfg['crop_scale_min'], 
     aspect_ratio = cfg['aspect_ratio'], 
     remain_min = cfg['remain_min'])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.img_size, train=False, transform=transform)
+    size=net.module.eval_size, train=False, transform=transform)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 
                     shuffle=True, num_workers=0, collate_fn=dataset_train.collate_fn)
 loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_eval'], 
@@ -45,7 +45,9 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
 lr = cfg['lr']
 lr_decay = cfg['lr_decay']
 encoder = Encoder(net.module.a_hw, net.module.scales, net.module.first_stride, 
-            train_iou_th=net.module.iou_th, size=net.module.img_size,
+            train_iou_th=net.module.iou_th, 
+            train_size=net.module.train_size,
+            eval_size=net.module.eval_size,
             nms=net.module.nms, nms_th=net.module.nms_th, nms_iou=net.module.nms_iou,
             max_detections=net.module.max_detections)
 

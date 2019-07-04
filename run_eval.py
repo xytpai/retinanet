@@ -32,13 +32,13 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.img_size, train=False, transform=transform)
+    size=net.module.eval_size, train=False, transform=transform)
 loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_eval'], 
                     shuffle=False, num_workers=0, collate_fn=dataset_eval.collate_fn)
 
 
 encoder = Encoder(net.module.a_hw, net.module.scales, net.module.first_stride, 
-            train_iou_th=net.module.iou_th, size=net.module.img_size,
+            train_iou_th=net.module.iou_th, eval_size=net.module.eval_size,
             nms=net.module.nms, nms_th=net.module.nms_th, nms_iou=net.module.nms_iou,
             max_detections=net.module.max_detections)
 

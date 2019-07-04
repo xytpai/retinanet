@@ -51,7 +51,9 @@ def focal_loss_detection(
     mask_reg = targets_cls > 0
     num_pos = float(torch.sum(mask_reg))
 
-    assert num_pos>0, 'Make sure every image has assigned anchors.'
+    # assert num_pos>0, 'Make sure every image has assigned anchors.'
+    if num_pos <= 0:
+        num_pos = 1.0
  
     feature_reg = feature_reg[mask_reg]
     targets_reg = targets_reg[mask_reg].to(feature_cls.device)

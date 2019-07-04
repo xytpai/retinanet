@@ -60,7 +60,8 @@ self.a_hw = [
 ]
 self.scales = 5
 self.first_stride = 8
-self.img_size = 641
+self.train_size = 641
+self.eval_size = 641
 self.iou_th = (0.3, 0.5)
 self.classes = 20   # TODO: total 20 classes exclude background
 self.nms = True
@@ -119,6 +120,7 @@ Then, configure some parameters in *detector.py* file.
 ```python
 self.classes = 80   # TODO: total 80 classes exclude background
 self.iou_th = (0.4, 0.5)
+self.eval_size = 961
 ```
 
 run train to get results. It takes about _ hours with _x Titan-Xp. 

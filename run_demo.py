@@ -23,7 +23,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 encoder = Encoder(net.a_hw, net.scales, net.first_stride, 
-            train_iou_th=net.iou_th, size=net.img_size,
+            train_iou_th=net.iou_th, eval_size=net.eval_size,
             nms=net.nms, nms_th=net.nms_th, nms_iou=net.nms_iou,
             max_detections=net.max_detections)
 with open('train.json', 'r') as load_f:
@@ -44,7 +44,7 @@ for filename in os.listdir('images/'):
         _boxes = torch.zeros(0,4)
         img_cpy = img.copy()
         img_cpy = transforms.ToTensor()(img_cpy)
-        img, _boxes, scale = corner_fix(img, _boxes, net.img_size)
+        img, _boxes, scale = corner_fix(img, _boxes, net.eval_size)
         img = transform(img)
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
         with torch.no_grad():

@@ -151,7 +151,8 @@ def _box_inter(box1, box2, eps=1e-10):
 def random_resize_fix(img, boxes, size, 
     img_scale_min=0.2, crop_scale_min=0.5, aspect_ratio=(3./4, 4./3), remain_min=0.9):
     while True:
-        method = ['random_resize_fix', 'corner_fix', 'random_resize_crop']
+        method = ['random_resize_fix', 'corner_fix', 'random_resize_crop',
+                    'random_crop', 'random_crop']
         # method = ['random_resize_crop']
         method = random.choice(method)
         if method == 'random_resize_fix':
@@ -174,7 +175,7 @@ def random_resize_fix(img, boxes, size,
             return img, boxes, scale_rate
         elif method == 'corner_fix':
             return corner_fix(img, boxes, size)
-        else:
+        elif method == 'random_resize_crop':
             if boxes.shape[0] == 0:
                 return corner_fix(img, boxes, size)
             success = False
@@ -215,7 +216,28 @@ def random_resize_fix(img, boxes, size,
                 img = img.resize((ow,oh), Image.BILINEAR)
                 boxes *= torch.FloatTensor([sh,sw,sh,sw])
                 # scale = max(img.shape[0], img.shape[1]) / float(size)
-                return img, boxes, -1.0
+                return img, boxes, 0.0
+        elif method == 'random_crop':
+            if boxes.shape[0] == 0:
+                return corner_fix(img, boxes, size)
+            w, h = img.size
+            size_min = min(w, h)
+            scale_rate = float(size) / size_min
+            ow, oh = int(w * scale_rate + 0.5), int(h * scale_rate + 0.5)
+            ofst = int(random.uniform(0, max(ow, oh) - size))
+            if np.argmin([w,h]) == 0:
+                j = 0
+                i = ofst
+            else:
+                j = ofst
+                i = 0
+            img = img.resize((ow,oh), Image.BILINEAR)
+            boxes = boxes*torch.Tensor([scale_rate, scale_rate, scale_rate, scale_rate])
+            img = img.crop((j, i, j+size, i+size))
+            boxes -= torch.Tensor([i,j,i,j])
+            boxes[:,1::2].clamp_(min=0, max=ow-1)
+            boxes[:,0::2].clamp_(min=0, max=oh-1)
+            return img, boxes, -scale_rate
 
 
 
@@ -259,9 +281,9 @@ if __name__ == '__main__':
     size = 641
     area_th = 25
     batch_size = 8
-    csv_root  = 'D:\\dataset\\coco17\\images'
-    csv_list  = '../data/coco_train2017.txt'
-    csv_name  = '../data/coco_name.txt'
+    csv_root  = 'C:\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages'
+    csv_list  = '../data/voc_test.txt'
+    csv_name  = '../data/voc_name.txt'
 
     transform = transforms.Compose([
         transforms.ColorJitter(brightness=0.03,contrast=0.03,saturation=0.03,hue=0.03),
@@ -284,7 +306,7 @@ if __name__ == '__main__':
         print(imgs.shape)
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, scales[i])
-        # idx = int(input('idx:'))
-        idx = 0
+        idx = int(input('idx:'))
+        # idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         break
