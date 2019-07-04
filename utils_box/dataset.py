@@ -151,8 +151,8 @@ def _box_inter(box1, box2, eps=1e-10):
 def random_resize_fix(img, boxes, size, 
     img_scale_min=0.2, crop_scale_min=0.5, aspect_ratio=(3./4, 4./3), remain_min=0.9):
     while True:
-        method = ['random_resize_fix', 'corner_fix', 'random_resize_crop',
-                    'random_crop', 'random_crop']
+        method = ['random_resize_fix', 'random_resize_crop',
+                    'corner_fix', 'random_crop']
         # method = ['random_resize_crop']
         method = random.choice(method)
         if method == 'random_resize_fix':
@@ -172,14 +172,14 @@ def random_resize_fix(img, boxes, size,
             img = img.crop((-ofst_w, -ofst_h, size-ofst_w, size-ofst_h))
             if boxes.shape[0] != 0:
                 boxes += torch.FloatTensor([ofst_h, ofst_w, ofst_h, ofst_w])
-            return img, boxes, scale_rate
+            return img, boxes, 10
         elif method == 'corner_fix':
             return corner_fix(img, boxes, size)
         elif method == 'random_resize_crop':
             if boxes.shape[0] == 0:
                 return corner_fix(img, boxes, size)
             success = False
-            for attempt in range(20):
+            for attempt in range(30):
                 area = img.size[0] * img.size[1]
                 target_area = random.uniform(crop_scale_min, 1.0) * area
                 aspect_ratio_ = random.uniform(aspect_ratio[0], aspect_ratio[1])
@@ -216,7 +216,7 @@ def random_resize_fix(img, boxes, size,
                 img = img.resize((ow,oh), Image.BILINEAR)
                 boxes *= torch.FloatTensor([sh,sw,sh,sw])
                 # scale = max(img.shape[0], img.shape[1]) / float(size)
-                return img, boxes, 0.0
+                return img, boxes, -10
         elif method == 'random_crop':
             if boxes.shape[0] == 0:
                 return corner_fix(img, boxes, size)
@@ -235,8 +235,8 @@ def random_resize_fix(img, boxes, size,
             boxes = boxes*torch.Tensor([scale_rate, scale_rate, scale_rate, scale_rate])
             img = img.crop((j, i, j+size, i+size))
             boxes -= torch.Tensor([i,j,i,j])
-            boxes[:,1::2].clamp_(min=0, max=ow-1)
-            boxes[:,0::2].clamp_(min=0, max=oh-1)
+            boxes[:,1::2].clamp_(min=0, max=size-1)
+            boxes[:,0::2].clamp_(min=0, max=size-1)
             return img, boxes, -scale_rate
 
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     train = True
     size = 641
     area_th = 25
-    batch_size = 8
+    batch_size = 20
     csv_root  = 'C:\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages'
     csv_list  = '../data/voc_test.txt'
     csv_name  = '../data/voc_name.txt'
