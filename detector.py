@@ -94,14 +94,20 @@ class Detector(nn.Module):
         _bias = -math.log((1.0-pi)/pi)
         nn.init.constant_(self.conv_cls[-1].bias, _bias)
 
+
     def upsample(self, input):
         '''
         ATTENTION: size must be odd
         '''
         return F.interpolate(input, size=(input.shape[2]*2-1, input.shape[3]*2-1),
                     mode='bilinear', align_corners=True)
-        
-    def forward(self, x):
+    
+
+    def forward(self, x, targets_cls=None, targets_reg=None):
+        '''
+        targets_cls: LongTensor(b, an)
+        targets_reg: FloatTensor(b, an, 4)
+        '''
         C3, C4, C5 = self.backbone(x)
         
         P5 = self.prj_5(C5)
@@ -135,6 +141,66 @@ class Detector(nn.Module):
             reg_i = reg_i.view(reg_i.shape[0], -1, 4)
             cls_out.append(cls_i)
             reg_out.append(reg_i)
+        
         # cls_out[b, sum_scale(Hi*Wi*an), classes]
         # reg_out[b, sum_scale(Hi*Wi*an), 4]
-        return torch.cat(cls_out, dim=1), torch.cat(reg_out, dim=1)
+        cls_out = torch.cat(cls_out, dim=1)
+        reg_out = torch.cat(reg_out, dim=1)
+
+        if targets_cls is None:
+            return cls_out, reg_out
+        else:
+            #########################################################
+            # split 2 steps to calculate loss in order to balance GPU
+            #########################################################
+            # TODO: loss step 1
+
+            mask_cls = targets_cls > -1 # (b, an)
+            cls_out = cls_out[mask_cls] # (S+-, classes)
+            reg_out = reg_out[mask_cls] # (S+-, 4)
+            targets_cls = targets_cls[mask_cls] # (S+-)
+            targets_reg = targets_reg[mask_cls] # (S+-, 4)
+
+            p = cls_out.sigmoid() # [S+-, classes]
+
+            one_hot = torch.zeros(cls_out.shape[0], 
+                1 + self.classes).to(cls_out.device).scatter_(1, 
+                    targets_cls.view(-1,1), 1) # [S+-, 1+classes]
+            one_hot = one_hot[:, 1:] # [S+-, classes]
+
+            pt = p*one_hot + (1.0-p)*(1.0-one_hot)
+
+            alpha = 0.25
+            gamma = 2
+
+            w = alpha*one_hot + (1.0-alpha)*(1.0-one_hot)
+            w = w * torch.pow((1.0-pt), gamma)
+
+            loss_cls_1 = -w * (pt+1e-10).log() # [S+-, classes]
+
+            mask_reg = targets_cls > 0 # (S+)
+
+            reg_out = reg_out[mask_reg] # (S+, 4)
+            targets_reg = targets_reg[mask_reg] # # (S+, 4)
+
+            return (loss_cls_1, mask_reg, reg_out, targets_reg)
+
+
+
+def get_loss(temp):
+    #########################################################
+    # split 2 steps to calculate loss in order to balance GPU
+    #########################################################
+    # TODO: loss step 2
+
+    loss_cls_1, mask_reg, reg_out, targets_reg = temp
+
+    loss_cls = torch.sum(loss_cls_1)
+
+    num_pos = float(torch.sum(mask_reg))
+    if num_pos <= 0:
+        num_pos = 1.0
+    
+    loss_reg = F.smooth_l1_loss(reg_out, targets_reg, reduction='sum')
+    loss = (loss_cls + loss_reg) / num_pos
+    return loss

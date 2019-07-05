@@ -5,8 +5,7 @@ import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
 from encoder import Encoder
-from detector import Detector
-from loss import loss_detection
+from detector import Detector, get_loss
 
 
 with open('train.json', 'r') as load_f:
@@ -65,9 +64,9 @@ for epoch_num in cfg['epoch_num']:
         # Train
         for i, (img, bbox, label, scale) in enumerate(loader_train):
             opt.zero_grad()
-            cls_out, reg_out = net(img)
             cls_targets, reg_targets = encoder.encode(label, bbox)
-            loss = loss_detection(cls_out, reg_out, cls_targets, reg_targets)
+            temp = net(img, cls_targets, reg_targets)
+            loss = get_loss(temp)
             loss.backward()
             clip = cfg['grad_clip']
             if clip > 0:
