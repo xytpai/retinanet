@@ -33,9 +33,9 @@ First, configure *train.json* file, add your root.
 
     "boxarea_th": 25,
     "img_scale_min": 0.4,
-    "crop_scale_min": 0.4,
+    "crop_scale_min": 0.2,
     "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.5,
+    "remain_min": 0.8,
 
     "grad_clip": 5
 }
@@ -107,9 +107,9 @@ First, configure train.json file, add your root.
 
     "boxarea_th": 25,
     "img_scale_min": 0.4,
-    "crop_scale_min": 0.4,
+    "crop_scale_min": 0.2,
     "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.5,
+    "remain_min": 0.8,
 
     "grad_clip": 5
 }

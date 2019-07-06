@@ -94,8 +94,12 @@ class Dataset_CSV(data.Dataset):
         size = self.size
         if self.train:
             img, boxes = random_flip(img, boxes)
+            img, boxes = random_rotation(img, boxes)
             img, boxes, scale = random_resize_fix(img, boxes, size,
                 self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
+            img = transforms.ColorJitter(
+                    brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1
+                )(img)
         else:
             img, boxes, scale = corner_fix(img, boxes, size)   
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
@@ -139,6 +143,32 @@ def corner_fix(img, boxes, size):
 
 
 
+def random_rotation(img, boxes, degree=6):
+    d = random.uniform(-degree, degree)
+    w, h = img.size
+    rx0, ry0 = w/2.0, h/2.0
+    img = img.rotate(d)
+    a = -d / 180.0 * math.pi
+    for i in range(boxes.shape[0]):
+        ymin, xmin, ymax, xmax = boxes[i, :]
+        xmin, ymin, xmax, ymax = float(xmin), float(ymin), float(xmax), float(ymax)
+        x0, y0 = xmin, ymin
+        x1, y1 = xmin, ymax
+        x2, y2 = xmax, ymin
+        x3, y3 = xmax, ymax
+        z = torch.FloatTensor([[y0,x0],[y1,x1],[y2,x2],[y3,x3]])
+        tp = torch.zeros_like(z)
+        tp[:,1] = (z[:,1] - rx0)*math.cos(a) - (z[:,0] - ry0)*math.sin(a) + rx0
+        tp[:,0] = (z[:,1] - rx0)*math.sin(a) + (z[:,0] - ry0)*math.cos(a) + ry0
+        ymax, xmax = torch.max(tp, dim=0)[0]
+        ymin, xmin = torch.min(tp, dim=0)[0]
+        boxes[i] = torch.stack([ymin,xmin,ymax,xmax])
+    boxes[:,1::2].clamp_(min=0, max=w-1)
+    boxes[:,0::2].clamp_(min=0, max=h-1)
+    return img, boxes
+
+
+
 def _box_inter(box1, box2, eps=1e-10):
     tl = torch.max(box1[:,None,:2], box2[:,:2])  # [n,m,2]
     br = torch.min(box1[:,None,2:], box2[:,2:])  # [n,m,2]
@@ -152,8 +182,7 @@ def random_resize_fix(img, boxes, size,
     img_scale_min=0.2, crop_scale_min=0.5, aspect_ratio=(3./4, 4./3), remain_min=0.9):
     while True:
         method = ['random_resize_fix', 'random_resize_crop',
-                    'corner_fix', 'random_crop']
-        # method = ['random_resize_crop']
+                    'corner_fix']
         method = random.choice(method)
         if method == 'random_resize_fix':
             w, h = img.size
@@ -217,27 +246,6 @@ def random_resize_fix(img, boxes, size,
                 boxes *= torch.FloatTensor([sh,sw,sh,sw])
                 # scale = max(img.shape[0], img.shape[1]) / float(size)
                 return img, boxes, -10
-        elif method == 'random_crop':
-            if boxes.shape[0] == 0:
-                return corner_fix(img, boxes, size)
-            w, h = img.size
-            size_min = min(w, h)
-            scale_rate = float(size) / size_min
-            ow, oh = int(w * scale_rate + 0.5), int(h * scale_rate + 0.5)
-            ofst = int(random.uniform(0, max(ow, oh) - size))
-            if np.argmin([w,h]) == 0:
-                j = 0
-                i = ofst
-            else:
-                j = ofst
-                i = 0
-            img = img.resize((ow,oh), Image.BILINEAR)
-            boxes = boxes*torch.Tensor([scale_rate, scale_rate, scale_rate, scale_rate])
-            img = img.crop((j, i, j+size, i+size))
-            boxes -= torch.Tensor([i,j,i,j])
-            boxes[:,1::2].clamp_(min=0, max=size-1)
-            boxes[:,0::2].clamp_(min=0, max=size-1)
-            return img, boxes, -scale_rate
 
 
 
@@ -280,13 +288,12 @@ if __name__ == '__main__':
     train = True
     size = 641
     area_th = 25
-    batch_size = 20
-    csv_root  = 'C:\\dataset\\VOCtest_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages'
-    csv_list  = '../data/voc_test.txt'
+    batch_size = 8
+    csv_root  = 'D:\\dataset\\VOC0712_trainval\\JPEGImages'
+    csv_list  = '../data/voc_trainval.txt'
     csv_name  = '../data/voc_name.txt'
 
     transform = transforms.Compose([
-        transforms.ColorJitter(brightness=0.03,contrast=0.03,saturation=0.03,hue=0.03),
         transforms.ToTensor(),
     ])
     import json
@@ -303,10 +310,17 @@ if __name__ == '__main__':
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
         shuffle=True, num_workers=0, collate_fn=dataset.collate_fn)
     for imgs, boxes, labels, scales in dataloader:
+        p10=0
+        n10=0
         print(imgs.shape)
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, scales[i])
-        idx = int(input('idx:'))
-        # idx = 0
+            if int(scales[i]) == 10:
+                p10 += 1
+            if int(scales[i]) == -10:
+                n10 += 1
+        # print('+10/-10:', float(p10/n10))
+        # idx = int(input('idx:'))
+        idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         break
