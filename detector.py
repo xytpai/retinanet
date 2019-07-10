@@ -43,7 +43,7 @@ class Detector(nn.Module):
         self.nms = True
         self.nms_th = 0.05
         self.nms_iou = 0.5
-        self.max_detections = 300
+        self.max_detections = 1000
         # ---------------------------
 
         self.backbone = backbone(pretrained=pretrained)

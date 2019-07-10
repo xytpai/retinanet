@@ -20,7 +20,7 @@ First, configure *train.json* file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [15,10],
+    "epoch_num": [20,10],
 
     "nbatch_train": 40,
     "nbatch_eval": 40,
@@ -67,7 +67,7 @@ self.classes = 20   # TODO: total 20 classes exclude background
 self.nms = True
 self.nms_th = 0.05
 self.nms_iou = 0.5
-self.max_detections = 300
+self.max_detections = 1000
 ```
 
 In my experiment, only 25 epochs were performed. Better results can be achieved if it takes longer(>77).

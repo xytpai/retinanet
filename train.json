@@ -9,7 +9,7 @@
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [15,10],
+    "epoch_num": [20,10],
 
     "nbatch_train": 40,
     "nbatch_eval": 40,

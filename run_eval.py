@@ -6,7 +6,6 @@ from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
 from encoder import Encoder
 from detector import Detector
-from loss import loss_detection
 
 
 with open('train.json', 'r') as load_f:
