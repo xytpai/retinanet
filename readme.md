@@ -120,6 +120,7 @@ Then, configure some parameters in *detector.py* file.
 ```python
 self.classes = 80   # TODO: total 80 classes exclude background
 self.iou_th = (0.4, 0.5)
+self.train_size = 1025
 self.eval_size = 1025
 ```
 
