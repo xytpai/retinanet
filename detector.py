@@ -36,10 +36,10 @@ class Detector(nn.Module):
         ]
         self.scales = 5
         self.first_stride = 8
-        self.train_size = 641
-        self.eval_size = 641
-        self.iou_th = (0.3, 0.5)
-        self.classes = 20
+        self.train_size = 1281
+        self.eval_size = 1281
+        self.iou_th = (0.4, 0.5)
+        self.classes = 80
         self.nms = True
         self.nms_th = 0.05
         self.nms_iou = 0.5
