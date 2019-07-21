@@ -156,7 +156,7 @@ class Detector(nn.Module):
             reg_out = reg_out[mask_cls] # (S+-, 4)
             targets_cls = targets_cls[mask_cls] # (S+-)
             targets_reg = targets_reg[mask_cls] # (S+-, 4)
-            loss_cls_1 = sigmoid_focal_loss(cls_out, targets_cls, gamma=2.0, alpha=0.25)
+            loss_cls_1 = sigmoid_focal_loss(cls_out, targets_cls, 2.0, 0.25)
             mask_reg = targets_cls > 0 # (S+)
             reg_out = reg_out[mask_reg] # (S+, 4)
             targets_reg = targets_reg[mask_reg] # # (S+, 4)
