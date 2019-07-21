@@ -140,23 +140,20 @@ class Encoder:
                 label_box_out.append(label_box_out_b)
                 continue
             
+            ############################可优化项==============================
             iou_pos_mask = iou > self.train_iou_th[1] # [an, Nb]
             iou_neg_mask = iou < self.train_iou_th[0] # [an, Nb]
             label_select = torch.argmax(iou, dim=1)   # [an]
             anchors_select = torch.argmax(iou, dim=0) # [Nb]
             anchors_pos_mask = torch.max(iou_pos_mask, dim=1)[0].byte() # [an]
             anchors_neg_mask = torch.min(iou_neg_mask, dim=1)[0].byte() # [an]
-
             # get class targets background
             label_class_out_b[anchors_neg_mask] = 0
-
             # get class targets 2
             label_class_out_b[anchors_select] = label_class[b]
-
             # get class targets 1
             label_select_1 = label_select[anchors_pos_mask]
             label_class_out_b[anchors_pos_mask] = label_class[b][label_select_1]
-
             # get box targets 2
             lb_yxyx_2 = label_box[b] # [Nb, 4]
             ay_ax = self.train_ay_ax[anchors_select]
@@ -167,7 +164,6 @@ class Encoder:
             f1_f2_2 = (lby_lbx_2 - ay_ax) / ah_aw
             f3_f4_2 = (lbh_lbw_2 / ah_aw + 1e-10).log()
             label_box_out_b[anchors_select] = torch.cat([f1_f2_2, f3_f4_2], dim=1)
-
             # get box targets 1
             lb_yxyx_1 = label_box[b][label_select_1] # [S, 4]
             ay_ax = self.train_ay_ax[anchors_pos_mask]
@@ -178,7 +174,8 @@ class Encoder:
             f1_f2_1 = (lby_lbx_1 - ay_ax) / ah_aw
             f3_f4_1 = (lbh_lbw_1 / ah_aw + 1e-10).log()
             label_box_out_b[anchors_pos_mask] = torch.cat([f1_f2_1, f3_f4_1], dim=1)
-
+            ############################可优化项==============================
+            
             label_class_out.append(label_class_out_b)
             label_box_out.append(label_box_out_b)
 
