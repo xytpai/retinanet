@@ -2,7 +2,7 @@ import math
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-import libs.sigmoid_focal_loss as sigmoid_focal_loss
+from libs.sigmoid_focal_loss import sigmoid_focal_loss
 # TODO: choose backbone
 from backbone import resnet50 as backbone
 
