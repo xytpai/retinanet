@@ -76,10 +76,10 @@ self.max_detections = 1000
 ```
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
-run train to get results. It takes about 8 hours with 5x Titan-Xp. 
-run analyze and got mAP@.5: **77.6%**
+run train to get results. It takes about 10 hours with 5x Titan-Xp. 
+run analyze and got mAP@.5: **78.4%**
 
-![](images/voc_r50_776_641.png)
+![](images/voc_r50_784_641.png)
 
 
 
