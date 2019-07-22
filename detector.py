@@ -157,20 +157,22 @@ class Detector(nn.Module):
             targets_cls = targets_cls[mask_cls] # (S+-)
             targets_reg = targets_reg[mask_cls] # (S+-, 4)
             loss_cls_1 = sigmoid_focal_loss(cls_out, targets_cls, 2.0, 0.25) # (S+-, classes)
-            loss_cls_1 = torch.sum(loss_cls_1, dim=0) # (classes)
+            loss_cls_1 = torch.sum(loss_cls_1).view(1)
             mask_reg = targets_cls > 0 # (S+)
             reg_out = reg_out[mask_reg] # (S+, 4)
             targets_reg = targets_reg[mask_reg] # # (S+, 4)
-            return (loss_cls_1, mask_reg, reg_out, targets_reg)
+            loss_reg = F.smooth_l1_loss(reg_out, targets_reg, reduction='sum').view(1)
+            num_pos = torch.sum(mask_reg).view(1)
+            return (loss_cls_1, loss_reg, num_pos)
 
 
 
 def get_loss(temp):
-    loss_cls_1, mask_reg, reg_out, targets_reg = temp
+    loss_cls_1, loss_reg, num_pos = temp
     loss_cls = torch.sum(loss_cls_1)
-    num_pos = float(torch.sum(mask_reg))
+    loss_reg = torch.sum(loss_reg)
+    num_pos = float(torch.sum(num_pos))
     if num_pos <= 0:
         num_pos = 1.0
-    loss_reg = F.smooth_l1_loss(reg_out, targets_reg, reduction='sum')
     loss = (loss_cls + loss_reg) / num_pos
     return loss
