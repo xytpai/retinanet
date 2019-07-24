@@ -4,7 +4,6 @@ import json
 import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
-from encoder import Encoder
 from detector import Detector
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -27,7 +26,6 @@ with open('train.json', 'r') as load_f:
 
 
 net = Detector(pretrained=False)
-encoder = Encoder(net)
 
 
 device_out = 'cuda:%d' % (cfg['device'][0])
@@ -55,15 +53,11 @@ with torch.no_grad():
         img = img.cuda(cfg['device'][0])
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
 
-        net_out = net(img)
-        for ni in range(len(net_out)):
-            net_out[ni] = net_out[ni].cpu()
+        cls_i_preds, cls_p_preds, reg_preds = net(img)
 
-        cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
-
-        cls_i_preds = cls_i_preds[0]
-        cls_p_preds = cls_p_preds[0]
-        reg_preds = reg_preds[0]
+        cls_i_preds = cls_i_preds[0].cpu()
+        cls_p_preds = cls_p_preds[0].cpu()
+        reg_preds = reg_preds[0].cpu()
 
         if reg_preds.shape[0] > 0:
 

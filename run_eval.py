@@ -4,7 +4,6 @@ import json
 import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
-from encoder import Encoder
 from detector import Detector
 
 
@@ -22,7 +21,6 @@ net = Detector(pretrained=False)
 
 
 
-encoder = Encoder(net)
 device_out = 'cuda:%d' % (cfg['device'][0])
 net.load_state_dict(torch.load('net.pkl', map_location=device_out))
 net = torch.nn.DataParallel(net, device_ids=cfg['device'])
@@ -48,14 +46,11 @@ with torch.no_grad():
     gt_bboxes = []
     gt_labels = []
     for i, (img, bbox, label, scale) in enumerate(loader_eval):
-        net_out = net(img)
-        for ni in range(len(net_out)):
-            net_out[ni] = net_out[ni].cpu()
-        cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
+        cls_i_preds, cls_p_preds, reg_preds = net(img)
         for idx in range(len(cls_i_preds)):
-            cls_i_preds[idx] = cls_i_preds[idx].detach().numpy()
-            cls_p_preds[idx] = cls_p_preds[idx].detach().numpy()
-            reg_preds[idx] = reg_preds[idx].detach().numpy()
+            cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
+            cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()
+            reg_preds[idx] = reg_preds[idx].cpu().detach().numpy()
         bbox = list(bbox)
         label = list(label)
         for idx in range(len(bbox)):

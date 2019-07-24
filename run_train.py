@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import json
+import time
 import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
-from encoder import Encoder
 from detector import Detector, get_loss
 
 
@@ -13,7 +13,6 @@ with open('train.json', 'r') as load_f:
 
 
 net = Detector(pretrained=cfg['pretrain'])
-encoder = Encoder(net)
 
 
 log = []
@@ -53,6 +52,7 @@ opt = torch.optim.SGD(net.parameters(), lr=lr,
 
 
 epoch = 0
+
 for epoch_num in cfg['epoch_num']:
 
     for param_group in opt.param_groups:
@@ -65,9 +65,9 @@ for epoch_num in cfg['epoch_num']:
 
         # Train
         for i, (img, bbox, label, scale) in enumerate(loader_train):
+            time_start = time.time()
             opt.zero_grad()
-            targets = encoder.encode(label, bbox)
-            temp = net(img, targets)
+            temp = net(img, label, bbox)
             loss = get_loss(temp)
             loss.backward()
             clip = cfg['grad_clip']
@@ -75,8 +75,10 @@ for epoch_num in cfg['epoch_num']:
                 torch.nn.utils.clip_grad_norm_(net.parameters(), clip)
             opt.step()
             maxmem = int(torch.cuda.max_memory_allocated(device=cfg['device'][0]) / 1024 / 1024)
-            print('epoch:%d, step:%d/%d, loss:%f, maxMem: %dMB' % \
-                (epoch, i*cfg['nbatch_train'], len(dataset_train), loss, maxmem))
+            time_end = time.time()
+            totaltime = int((time_end - time_start) * 1000)
+            print('epoch:%d, step:%d/%d, loss:%f, maxMem:%dMB, time:%dms' % \
+                (epoch, i*cfg['nbatch_train'], len(dataset_train), loss, maxmem, totaltime))
         
         # Eval
         with torch.no_grad():
@@ -87,14 +89,11 @@ for epoch_num in cfg['epoch_num']:
             gt_bboxes = []
             gt_labels = []
             for i, (img, bbox, label, scale) in enumerate(loader_eval):
-                net_out = net(img)
-                for ni in range(len(net_out)):
-                    net_out[ni] = net_out[ni].cpu()
-                cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
+                cls_i_preds, cls_p_preds, reg_preds = net(img)
                 for idx in range(len(cls_i_preds)):
-                    cls_i_preds[idx] = cls_i_preds[idx].detach().numpy()
-                    cls_p_preds[idx] = cls_p_preds[idx].detach().numpy()
-                    reg_preds[idx] = reg_preds[idx].detach().numpy()
+                    cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
+                    cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()
+                    reg_preds[idx] = reg_preds[idx].cpu().detach().numpy()
                 bbox = list(bbox)
                 label = list(label)
                 for idx in range(len(bbox)):

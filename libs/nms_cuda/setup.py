@@ -4,11 +4,11 @@ import glob
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 setup(
-    name='sigmoid_focal_loss_cuda',
+    name='nms_cuda',
     ext_modules=[
         CUDAExtension(
-            'sigmoid_focal_loss_cuda', 
-            ['sigmoid_focal_loss.cpp', 'sigmoid_focal_loss_cuda.cu'],
+            'nms_cuda', 
+            ['nms_cuda.cpp', 'nms_kernel.cu'],
         )
     ],
     cmdclass={

@@ -3,10 +3,10 @@ import imp
 
 
 try:
-    imp.find_module('nms_cpu')
-    import nms_cpu
+    imp.find_module('nms_cuda')
+    import nms_cuda
 
-    print('use lib nms_cpu')
+    print('use lib nms_cuda')
 
     def box_nms(bboxes, scores, threshold=0.5):
         '''
@@ -19,7 +19,7 @@ try:
         '''
         scores = scores.view(-1, 1)
         bboxes_scores = torch.cat([bboxes, scores], dim=1) # (n, 5)
-        keep = nms_cpu.nms(bboxes_scores, threshold) # (s)
+        keep = nms_cuda.nms(bboxes_scores, threshold) # (s)
         return keep
 
 except ImportError:

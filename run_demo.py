@@ -5,7 +5,6 @@ import json
 from PIL import Image
 import torchvision.transforms as transforms
 from utils_box.dataset import show_bbox, corner_fix
-from encoder import Encoder
 from detector import Detector
 
 
@@ -21,7 +20,6 @@ net = Detector(pretrained=False)
 
 
 
-encoder = Encoder(net)
 net.load_state_dict(torch.load('net.pkl', map_location='cpu'))
 net.eval()
 
@@ -50,11 +48,8 @@ for filename in os.listdir('images/'):
         img = transform(img)
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
         with torch.no_grad():
-            net_out = net(img)
-            for ni in range(len(net_out)):
-                net_out[ni] = net_out[ni].cpu()
-            cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
+            cls_i_preds, cls_p_preds, reg_preds = net(img)
             name = 'images/pred_'+filename.split('.')[0]+'.bmp'
             reg_preds[0] /= scale
-            show_bbox(img_cpy, reg_preds[0], cls_i_preds[0], LABEL_NAMES, name)
+            show_bbox(img_cpy, reg_preds[0].cpu(), cls_i_preds[0].cpu(), LABEL_NAMES, name)
 
