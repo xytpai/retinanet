@@ -50,29 +50,10 @@ Then, configure some parameters in *detector.py* file.
 # TODO: choose backbone
 from backbone import resnet50 as backbone
 # TODO: configure Detector
-self.a_hw = [
-    [32.00, 32.00],
-    [40.32, 40.32],
-    [50.80, 50.80],
-
-    [22.63, 45.25],
-    [28.51, 57.02],
-    [35.92, 71.84],
-
-    [45.25, 22.63],
-    [57.02, 28.51],
-    [71.84, 35.92],
-]
-self.scales = 5
-self.first_stride = 8
 self.train_size = 641
 self.eval_size = 641
 self.iou_th = (0.3, 0.5)
 self.classes = 20   # TODO: total 20 classes exclude background
-self.nms = True
-self.nms_th = 0.05
-self.nms_iou = 0.5
-self.max_detections = 1000
 ```
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
