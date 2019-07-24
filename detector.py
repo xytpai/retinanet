@@ -104,11 +104,12 @@ class Detector(nn.Module):
                     mode='bilinear', align_corners=True)
     
 
-    def forward(self, x, targets_cls=None, targets_reg=None):
+    def forward(self, x, targets=None):
         '''
         targets_cls: LongTensor(b, an)
         targets_reg: FloatTensor(b, an, 4)
         '''
+        
         C3, C4, C5 = self.backbone(x)
         
         P5 = self.prj_5(C5)
@@ -148,9 +149,10 @@ class Detector(nn.Module):
         cls_out = torch.cat(cls_out, dim=1)
         reg_out = torch.cat(reg_out, dim=1)
 
-        if targets_cls is None:
+        if targets is None:
             return (cls_out, reg_out)
         else:
+            targets_cls, targets_reg = targets
             mask_cls = targets_cls > -1 # (b, an)
             cls_out = cls_out[mask_cls] # (S+-, classes)
             reg_out = reg_out[mask_cls] # (S+-, 4)
