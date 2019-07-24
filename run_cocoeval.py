@@ -17,43 +17,43 @@ set_name = 'val2017'
 # ==================================
 
 
-
+# Read train.json/coco_table_file and set current GPU (for nms_cuda)
 with open(coco_table_file, 'r') as load_f:
     coco_table = json.load(load_f)
 with open('train.json', 'r') as load_f:
     cfg = json.load(load_f)
+torch.cuda.set_device(cfg['device'][0])
 
 
+# Prepare the network
 net = Detector(pretrained=False)
-
-
 device_out = 'cuda:%d' % (cfg['device'][0])
 net.load_state_dict(torch.load('net.pkl', map_location=device_out))
-net = torch.nn.DataParallel(net, device_ids=cfg['device'])
 net = net.cuda(cfg['device'][0])
 net.eval()
 
 
+# Get eval dataset
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.eval_size, train=False, transform=transform)
+    size=net.eval_size, train=False, transform=transform)
 
 
 # Eval
 with torch.no_grad():
-
     results = []
-
     for i in range(len(dataset_eval)):
 
         img, bbox, label, scale = dataset_eval[i]
         img = img.cuda(cfg['device'][0])
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
 
-        cls_i_preds, cls_p_preds, reg_preds = net(img)
-
+        temp = net(img)
+        cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
+                net.module.nms_th, net.module.nms_iou, net.module.eval_size)
+                
         cls_i_preds = cls_i_preds[0].cpu()
         cls_p_preds = cls_p_preds[0].cpu()
         reg_preds = reg_preds[0].cpu()
