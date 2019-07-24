@@ -42,7 +42,6 @@ class Detector(nn.Module):
 
         # structure =======================================================
         self.backbone = backbone(pretrained=pretrained)
-        self.num_anchors = 
         self.relu = nn.ReLU(inplace=True)
         self.conv_out6 = nn.Conv2d(2048, 256, kernel_size=3, padding=1, stride=2)
         self.conv_out7 = nn.Conv2d(256, 256, kernel_size=3, padding=1, stride=2)
@@ -91,17 +90,25 @@ class Detector(nn.Module):
         nn.init.constant_(self.conv_cls[-1].bias, _bias)
 
         # generate anchors =======================================================
-        self.train_anchors_yxyx, self.train_anchors_yxhw = \
+        self._train_anchors_yxyx, self.train_anchors_yxhw = \
             gen_anchors(self.a_hw, self.scales, self.train_size, self.first_stride)
-        self.train_an = self.train_anchors_yxyx.shape[0]
-        self.train_ay_ax = self.train_anchors_yxhw[:, :2]
-        self.train_ah_aw = self.train_anchors_yxhw[:, 2:]
+        self.train_an = self.train_anchors_yxhw.shape[0]
+        self._train_ay_ax = self.train_anchors_yxhw[:, :2]
+        self._train_ah_aw = self.train_anchors_yxhw[:, 2:]
 
-        self.eval_anchors_yxyx, self.eval_anchors_yxhw = \
+        self._eval_anchors_yxyx, self.eval_anchors_yxhw = \
             gen_anchors(self.a_hw, self.scales, self.eval_size, self.first_stride)
-        self.eval_an = self.eval_anchors_yxyx.shape[0]
-        self.eval_ay_ax = self.eval_anchors_yxhw[:, :2]
-        self.eval_ah_aw = self.eval_anchors_yxhw[:, 2:]
+        self.eval_an = self.eval_anchors_yxhw.shape[0]
+        self._eval_ay_ax = self.eval_anchors_yxhw[:, :2]
+        self._eval_ah_aw = self.eval_anchors_yxhw[:, 2:]
+
+        self.register_buffer('train_anchors_yxyx', self._train_anchors_yxyx)
+        self.register_buffer('train_ay_ax', self._train_ay_ax)
+        self.register_buffer('train_ah_aw', self._train_ah_aw)
+
+        self.register_buffer('eval_anchors_yxyx', self._eval_anchors_yxyx)
+        self.register_buffer('eval_ay_ax', self._eval_ay_ax)
+        self.register_buffer('eval_ah_aw', self._eval_ah_aw)
 
 
     def upsample(self, input):
@@ -115,8 +122,8 @@ class Detector(nn.Module):
     def forward(self, x, label_class=None, label_box=None):
         '''
         Param:
-        label_class: (LongTensor(N1), LongTensor(N2), ...) or None
-        label_box:   (FloatTensor(N1,4), FloatTensor(N2,4), ...) or None
+        label_class: LongTensor(batch_num, N_max) or None
+        label_box:   FloatTensor(batch_num, N_max, 4) or None
 
         Return:
         loss temp or
@@ -169,7 +176,6 @@ class Detector(nn.Module):
             return cls_i_preds, cls_p_preds, reg_preds
         else:
             targets_cls, targets_reg = self._encode(label_class, label_box)
-            targets_cls, targets_reg = targets
             mask_cls = targets_cls > -1 # (b, an)
             cls_out = cls_out[mask_cls] # (S+-, classes)
             reg_out = reg_out[mask_cls] # (S+-, 4)
@@ -188,8 +194,8 @@ class Detector(nn.Module):
     def _encode(self, label_class, label_box):
         '''
         Param:
-        label_class: (LongTensor(N1), LongTensor(N2), ...)
-        label_box:   (FloatTensor(N1,4), FloatTensor(N2,4), ...)
+        label_class: LongTensor(batch_num, N_max)
+        label_box:   FloatTensor(batch_num, N_max, 4)
 
         Return:
         targets_cls: LongTensor(batch_num, an)
@@ -198,11 +204,11 @@ class Detector(nn.Module):
         label_class_out = []
         label_box_out   = []
 
-        for b in range(len(label_class)):
+        for b in range(label_class.shape[0]):
 
             label_class_out_b = torch.full((self.train_an,), -1).long().to(label_class.device)
             label_box_out_b = torch.zeros(self.train_an, 4).to(label_class.device)
-            iou = box_iou(self.train_anchors_yxyx, label_box[b]) # [an, Nb]
+            iou = box_iou(self.train_anchors_yxyx, label_box[b]) # [an, N]
             
             if (iou.shape[1] <= 0):
                 # print('Find an image that does not contain objects')
@@ -212,8 +218,8 @@ class Detector(nn.Module):
                 continue
             
             ############################可优化项==============================
-            iou_pos_mask = iou > self.train_iou_th[1] # [an, Nb]
-            iou_neg_mask = iou < self.train_iou_th[0] # [an, Nb]
+            iou_pos_mask = iou > self.iou_th[1] # [an, Nb]
+            iou_neg_mask = iou < self.iou_th[0] # [an, Nb]
             label_select = torch.argmax(iou, dim=1)   # [an]
             anchors_select = torch.argmax(iou, dim=0) # [Nb]
             anchors_pos_mask = torch.max(iou_pos_mask, dim=1)[0].byte() # [an]
@@ -280,7 +286,7 @@ class Detector(nn.Module):
             ymin_xmin_ymax_xmax = torch.cat([ymin_xmin, ymax_xmax], dim=1)
             reg_preds.append(ymin_xmin_ymax_xmax)
         reg_preds = torch.stack(reg_preds, dim=0)
-
+        
         # Topk
         nms_maxnum = min(int(self.max_detections), int(cls_p_preds.shape[1]))
         select = torch.topk(cls_p_preds, nms_maxnum, largest=True, dim=1)[1]
@@ -309,9 +315,6 @@ class Detector(nn.Module):
             reg_preds_b[:, :2] = reg_preds_b[:, :2].clamp(min=0)
             reg_preds_b[:, 2] = reg_preds_b[:, 2].clamp(max=self.eval_size-1)
             reg_preds_b[:, 3] = reg_preds_b[:, 3].clamp(max=self.eval_size-1)
-
-            if scale_shift is not None:
-                reg_preds_b /= float(scale_shift)
 
             _cls_i_preds.append(cls_i_preds_b)
             _cls_p_preds.append(cls_p_preds_b)

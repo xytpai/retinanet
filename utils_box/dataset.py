@@ -97,9 +97,9 @@ class Dataset_CSV(data.Dataset):
             # img, boxes = random_rotation(img, boxes)
             img, boxes, scale = random_resize_fix(img, boxes, size,
                 self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
-            # img = transforms.ColorJitter(
-            #         brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1
-            #     )(img)
+            img = transforms.ColorJitter(
+                    brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1
+                )(img)
         else:
             img, boxes, scale = corner_fix(img, boxes, size)   
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
@@ -115,16 +115,27 @@ class Dataset_CSV(data.Dataset):
         '''
         Return:
         img     FloatTensor(batch_num, 3, size, size),
-        boxes   (FloatTensor(N1,4), FloatTensor(N2,4), ...)
-        Labels  (LongTensor(N1), LongTensor(N2), ...),
-        scale   (s1, s2, ...)
+        boxes   FloatTensor(batch_num, N_max, 4)
+        Labels  LongTensor(batch_num, N_max)
+        scale   FloatTensor(batch_num)
 
         Note:
         - Ni can be zero
         '''
         img, boxes, labels, scale = zip(*data)
         img = torch.stack(img, dim=0)
-        return img, boxes, labels, scale
+        batch_num = len(boxes)
+        N_max = 0
+        for b in range(batch_num):
+            n = boxes[b].shape[0]
+            if n > N_max: N_max = n
+        boxes_t = torch.zeros(batch_num, N_max, 4)
+        labels_t = torch.zeros(batch_num, N_max).long()
+        for b in range(batch_num):
+            boxes_t[b, 0:boxes[b].shape[0]] = boxes[b]
+            labels_t[b, 0:boxes[b].shape[0]] = labels[b]
+        scale_t = torch.FloatTensor(scale)
+        return img, boxes_t, labels_t, scale_t
 
 
 
@@ -263,15 +274,23 @@ def random_flip(img, boxes):
 
 
 def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=False):
+    '''
+    img:      FloatTensor(3, H, W)
+    boxes:    FloatTensor(N, 4)
+    labels:   LongTensor(N)
+    NAME_TAB: ['background', 'class_1', 'class_2', ...]
+    file_name: 'out.bmp' or None
+    '''
     img = transforms.ToPILImage()(img)
     drawObj = ImageDraw.Draw(img)
-    i = 0
-    for box in boxes:
-        strlen = len(NAME_TAB[int(labels[i])])
-        drawObj.rectangle((box[1],box[0],box[1]+strlen*6,box[0]+12), fill='blue')
-        drawObj.text((box[1],box[0]), NAME_TAB[int(labels[i])])
-        drawObj.rectangle((box[1],box[0],box[3],box[2]), outline='red')
-        i += 1
+    for box_id in range(boxes.shape[0]):
+        lb = int(labels[box_id])
+        if lb > 0:
+            box = boxes[box_id]
+            strlen = len(NAME_TAB[lb])
+            drawObj.rectangle((box[1],box[0],box[1]+strlen*6,box[0]+12), fill='blue')
+            drawObj.text((box[1],box[0]), NAME_TAB[lb])
+            drawObj.rectangle((box[1],box[0],box[3],box[2]), outline='red')
     if file_name is not None:
         img.save(file_name)
     else:
@@ -312,7 +331,11 @@ if __name__ == '__main__':
     for imgs, boxes, labels, scales in dataloader:
         p10=0
         n10=0
+        print(labels)
         print(imgs.shape)
+        print(boxes.shape)
+        print(labels.shape)
+        print(scales.shape)
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, scales[i])
             if int(scales[i]) == 10:
@@ -320,7 +343,7 @@ if __name__ == '__main__':
             if int(scales[i]) == -10:
                 n10 += 1
         # print('+10/-10:', float(p10/n10))
-        # idx = int(input('idx:'))
-        idx = 0
+        idx = int(input('idx:'))
+        # idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         break
