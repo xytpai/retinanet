@@ -149,7 +149,7 @@ class Detector(nn.Module):
         reg_out = torch.cat(reg_out, dim=1)
 
         if targets_cls is None:
-            return cls_out, reg_out
+            return (cls_out, reg_out)
         else:
             mask_cls = targets_cls > -1 # (b, an)
             cls_out = cls_out[mask_cls] # (S+-, classes)

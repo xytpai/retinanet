@@ -1,5 +1,6 @@
 import torch
 from utils_box.anchors import gen_anchors
+from libs.nms import box_nms 
 # TODO: define Encoder
 
 
@@ -24,70 +25,19 @@ def box_iou(box1, box2, eps=1e-10):
 
 
 
-def box_nms(bboxes, scores, threshold=0.5, mode='union', eps=1e-10):
-    '''
-    Param:
-    bboxes: FloatTensor(n,4) # 4: ymin, xmin, ymax, xmax
-    scores: FloatTensor(n)
-    mode:   'union' or 'min'
-
-    Return:
-    LongTensor(S) # index of keep boxes
-    '''
-    ymin, xmin, ymax, xmax = bboxes[:,0], bboxes[:,1], bboxes[:,2], bboxes[:,3]
-    areas = (xmax-xmin+eps) * (ymax-ymin+eps)
-    order = scores.sort(0, descending=True)[1]
-    keep = []
-
-    while order.numel() > 0:
-        i = order[0] 
-        keep.append(i)
-        if order.numel() == 1:
-            break
-        _ymin = ymin[order[1:]].clamp(min=float(ymin[i]))
-        _xmin = xmin[order[1:]].clamp(min=float(xmin[i]))
-        _ymax = ymax[order[1:]].clamp(max=float(ymax[i]))
-        _xmax = xmax[order[1:]].clamp(max=float(xmax[i]))
-        _h = (_ymax-_ymin+eps).clamp(min=0)
-        _w = (_xmax-_xmin+eps).clamp(min=0)
-        inter = _h * _w
-        if mode == 'union':
-            ovr = inter / (areas[i] + areas[order[1:]] - inter)
-        elif mode == 'min':
-            ovr = inter / areas[order[1:]].clamp(max=float(areas[i]))
-        else:
-            raise TypeError('Unknown nms mode: %s.' % mode)
-        ids = (ovr<=threshold).nonzero().squeeze() + 1
-        if ids.numel() == 0:
-            break
-        order = torch.index_select(order, 0, ids)
-    return torch.LongTensor(keep)
-
-
-
 class Encoder:
-    def __init__(self, 
-        a_hw= [[28.0, 28.0], [19.8, 39.6], [39.6, 19.8]], 
-        scales=3, 
-        first_stride=8, 
-        train_iou_th=(0.3, 0.5), 
-        train_size=641, 
-        eval_size=641,
-        nms=True, 
-        nms_th=0.05, 
-        nms_iou=0.5,
-        max_detections=300):
+    def __init__(self, detector):
 
-        self.a_hw = a_hw
-        self.scales = scales
-        self.first_stride = first_stride
-        self.train_iou_th = train_iou_th
-        self.train_size = train_size
-        self.eval_size = eval_size
-        self.nms = nms
-        self.nms_th = nms_th
-        self.nms_iou = nms_iou
-        self.max_detections = max_detections
+        self.a_hw = detector.a_hw
+        self.scales = detector.scales
+        self.first_stride = detector.first_stride
+        self.train_iou_th = detector.train_iou_th
+        self.train_size = detector.train_size
+        self.eval_size = detector.eval_size
+        self.nms = detector.nms
+        self.nms_th = detector.nms_th
+        self.nms_iou = detector.nms_iou
+        self.max_detections = detector.max_detections
 
         self.train_anchors_yxyx, self.train_anchors_yxhw = \
             gen_anchors(self.a_hw, self.scales, self.train_size, self.first_stride)
@@ -181,9 +131,9 @@ class Encoder:
 
         class_targets = torch.stack(label_class_out, dim=0)
         box_targets = torch.stack(label_box_out, dim=0)
-        return class_targets, box_targets
+        return (class_targets, box_targets)
 
-    def decode(self, cls_out, reg_out, scale_shift=None):
+    def decode(self, net_out, scale_shift=None):
         '''
         Param:
         cls_out: FloatTensor(batch_num, an, classes)
@@ -214,6 +164,8 @@ class Encoder:
             ymin, xmin = y-h/2, x-w/2
             ymax, xmax = y+h/2, x+w/2
         '''
+        cls_out, reg_out = net_out
+
         cls_p_preds, cls_i_preds = torch.max(cls_out.sigmoid(), dim=2)
         cls_i_preds = cls_i_preds + 1
         reg_preds = []

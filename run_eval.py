@@ -13,13 +13,16 @@ with open('train.json', 'r') as load_f:
 net = Detector(pretrained=False)
 
 
-# TODO: 
+
+# TODO: ============================
 # net.nms_th = 0.05
 # cfg['device'] = [0,1,2,3,9]
 # cfg['nbatch_eval'] = 30
-###############
+# ==================================
 
 
+
+encoder = Encoder(net)
 device_out = 'cuda:%d' % (cfg['device'][0])
 net.load_state_dict(torch.load('net.pkl', map_location=device_out))
 net = torch.nn.DataParallel(net, device_ids=cfg['device'])
@@ -36,12 +39,6 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
                     shuffle=False, num_workers=0, collate_fn=dataset_eval.collate_fn)
 
 
-encoder = Encoder(net.module.a_hw, net.module.scales, net.module.first_stride, 
-            train_iou_th=net.module.iou_th, eval_size=net.module.eval_size,
-            nms=net.module.nms, nms_th=net.module.nms_th, nms_iou=net.module.nms_iou,
-            max_detections=net.module.max_detections)
-
-
 # Eval
 with torch.no_grad():
     net.eval()
@@ -51,8 +48,10 @@ with torch.no_grad():
     gt_bboxes = []
     gt_labels = []
     for i, (img, bbox, label, scale) in enumerate(loader_eval):
-        cls_out, reg_out = net(img)
-        cls_i_preds, cls_p_preds, reg_preds = encoder.decode(cls_out.cpu(), reg_out.cpu())
+        net_out = net(img)
+        for ni in range(len(net_out)):
+            net_out[ni] = net_out[ni].cpu()
+        cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
         for idx in range(len(cls_i_preds)):
             cls_i_preds[idx] = cls_i_preds[idx].detach().numpy()
             cls_p_preds[idx] = cls_p_preds[idx].detach().numpy()
@@ -90,4 +89,3 @@ with torch.no_grad():
     print(map_75)
     print('ap@.5')
     print(ap_res[0]['ap'])
-

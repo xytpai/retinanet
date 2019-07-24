@@ -13,6 +13,9 @@ with open('train.json', 'r') as load_f:
 
 
 net = Detector(pretrained=cfg['pretrain'])
+encoder = Encoder(net)
+
+
 log = []
 device_out = 'cuda:%d' % (cfg['device'][0])
 if cfg['load']:
@@ -43,37 +46,37 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
 
 lr = cfg['lr']
 lr_decay = cfg['lr_decay']
-encoder = Encoder(net.module.a_hw, net.module.scales, net.module.first_stride, 
-            train_iou_th=net.module.iou_th, 
-            train_size=net.module.train_size,
-            eval_size=net.module.eval_size,
-            nms=net.module.nms, nms_th=net.module.nms_th, nms_iou=net.module.nms_iou,
-            max_detections=net.module.max_detections)
+
+
+opt = torch.optim.SGD(net.parameters(), lr=lr, 
+            momentum=cfg['momentum'], weight_decay=cfg['weight_decay'])
 
 
 epoch = 0
 for epoch_num in cfg['epoch_num']:
 
-    for e in range(epoch_num):
+    for param_group in opt.param_groups:
+        param_group['lr'] = lr
 
-        opt = torch.optim.SGD(net.parameters(), lr=lr, 
-            momentum=cfg['momentum'], weight_decay=cfg['weight_decay'])
+    for e in range(epoch_num):
+        
         if cfg['freeze_bn']:
             net.module.backbone.freeze_bn()
 
         # Train
         for i, (img, bbox, label, scale) in enumerate(loader_train):
             opt.zero_grad()
-            cls_targets, reg_targets = encoder.encode(label, bbox)
-            temp = net(img, cls_targets, reg_targets)
+            targets = encoder.encode(label, bbox)
+            temp = net(img, targets)
             loss = get_loss(temp)
             loss.backward()
             clip = cfg['grad_clip']
             if clip > 0:
                 torch.nn.utils.clip_grad_norm_(net.parameters(), clip)
             opt.step()
-            print('epoch:%d, step:%d/%d, loss:%f' % \
-                (epoch, i*cfg['nbatch_train'], len(dataset_train), loss))
+            maxmem = int(torch.cuda.max_memory_allocated(device=cfg['device'][0]) / 1024 / 1024)
+            print('epoch:%d, step:%d/%d, loss:%f, maxMem: %dMB' % \
+                (epoch, i*cfg['nbatch_train'], len(dataset_train), loss, maxmem))
         
         # Eval
         with torch.no_grad():
@@ -84,8 +87,10 @@ for epoch_num in cfg['epoch_num']:
             gt_bboxes = []
             gt_labels = []
             for i, (img, bbox, label, scale) in enumerate(loader_eval):
-                cls_out, reg_out = net(img)
-                cls_i_preds, cls_p_preds, reg_preds = encoder.decode(cls_out.cpu(), reg_out.cpu())
+                net_out = net(img)
+                for ni in range(len(net_out)):
+                    net_out[ni] = net_out[ni].cpu()
+                cls_i_preds, cls_p_preds, reg_preds = encoder.decode(net_out)
                 for idx in range(len(cls_i_preds)):
                     cls_i_preds[idx] = cls_i_preds[idx].detach().numpy()
                     cls_p_preds[idx] = cls_p_preds[idx].detach().numpy()
@@ -124,4 +129,5 @@ for epoch_num in cfg['epoch_num']:
                 np.save('log.npy', log)
          
         epoch += 1
+
     lr *= lr_decay
