@@ -5,7 +5,7 @@ import time
 import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
-from detector import Detector, get_loss
+from detector import Detector, get_loss, get_pred
 
 
 with open('train.json', 'r') as load_f:
@@ -89,24 +89,29 @@ for epoch_num in cfg['epoch_num']:
             gt_bboxes = []
             gt_labels = []
             for i, (img, bbox, label, scale) in enumerate(loader_eval):
-                cls_i_preds, cls_p_preds, reg_preds = net(img)
+                temp = net(img)
+                cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
+                        net.module.nms_th, net.module.nms_iou, net.module.eval_size)
                 for idx in range(len(cls_i_preds)):
                     cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
                     cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()
                     reg_preds[idx] = reg_preds[idx].cpu().detach().numpy()
-                bbox = list(bbox)
-                label = list(label)
-                for idx in range(len(bbox)):
-                    bbox[idx] = bbox[idx].detach().numpy()
-                    label[idx] = label[idx].detach().numpy()
+                _boxes = []
+                _label = []
+                for idx in range(bbox.shape[0]):
+                    mask = label[idx] > 0
+                    _boxes.append(bbox[idx][mask].detach().numpy())
+                    _label.append(label[idx][mask].detach().numpy())
                 pred_bboxes += reg_preds
                 pred_labels += cls_i_preds
                 pred_scores += cls_p_preds
-                gt_bboxes += bbox
-                gt_labels += label
+                gt_bboxes += _boxes
+                gt_labels += _label
                 print('  Eval: {}/{}'.format(i*cfg['nbatch_eval'], len(dataset_eval)), end='\r')
             ap_iou = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
             ap_res = []
+            print(len(pred_bboxes), len(pred_labels))
+            print(len(gt_bboxes), len(gt_labels))
             for iou_th in ap_iou:
                 res = eval_detection(pred_bboxes, pred_labels, 
                             pred_scores, gt_bboxes, gt_labels, iou_th=iou_th)

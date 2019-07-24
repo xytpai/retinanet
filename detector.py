@@ -126,10 +126,13 @@ class Detector(nn.Module):
         label_box:   FloatTensor(batch_num, N_max, 4) or None
 
         Return:
-        loss temp or
-        cls_i_preds: (LongTensor(s1), LongTensor(s2), ...)
-        cls_p_preds: (FloatTensor(s1), FloatTensor(s2), ...)
-        reg_preds:   (FloatTensor(s1,4), FloatTensor(s2,4), ...)
+        loss_cls: FloatTensor(1)
+        loss_reg: FloatTensor(1)
+        num_pos:  FloatTensor(1)
+        or
+        cls_i_preds: LongTensor(batch_num, topk)
+        cls_p_preds: FloatTensor(batch_num, topk)
+        reg_preds:   FloatTensor(batch_num, topk, 4)
         '''
         
         C3, C4, C5 = self.backbone(x)
@@ -173,7 +176,7 @@ class Detector(nn.Module):
 
         if (label_class is None) or (label_box is None):
             cls_i_preds, cls_p_preds, reg_preds = self._decode(cls_out, reg_out)
-            return cls_i_preds, cls_p_preds, reg_preds
+            return (cls_i_preds, cls_p_preds, reg_preds)
         else:
             targets_cls, targets_reg = self._encode(label_class, label_box)
             mask_cls = targets_cls > -1 # (b, an)
@@ -268,9 +271,9 @@ class Detector(nn.Module):
         reg_out: FloatTensor(batch_num, an, 4)
         
         Return:
-        cls_i_preds: (LongTensor(s1), LongTensor(s2), ...)
-        cls_p_preds: (FloatTensor(s1), FloatTensor(s2), ...)
-        reg_preds:   (FloatTensor(s1,4), FloatTensor(s2,4), ...)
+        cls_i_preds: LongTensor(batch_num, topk)
+        cls_p_preds: FloatTensor(batch_num, topk)
+        reg_preds:   FloatTensor(batch_num, topk, 4)
         '''
 
         cls_p_preds, cls_i_preds = torch.max(cls_out.sigmoid(), dim=2)
@@ -292,35 +295,21 @@ class Detector(nn.Module):
         select = torch.topk(cls_p_preds, nms_maxnum, largest=True, dim=1)[1]
         
         # NMS
-        _cls_i_preds = []
-        _cls_p_preds = []
-        _reg_preds = []
+        list_cls_i_preds = []
+        list_cls_p_preds = []
+        list_reg_preds = []
 
         for b in range(cls_out.shape[0]):
-
             cls_i_preds_b = cls_i_preds[b][select[b]] # (topk)
             cls_p_preds_b = cls_p_preds[b][select[b]] # (topk)
             reg_preds_b = reg_preds[b][select[b]] # (topk, 4)
-
-            mask = cls_p_preds_b > self.nms_th
-            cls_i_preds_b = cls_i_preds_b[mask]
-            cls_p_preds_b = cls_p_preds_b[mask]
-            reg_preds_b = reg_preds_b[mask]
-
-            keep = box_nms(reg_preds_b, cls_p_preds_b, self.nms_iou)
-            cls_i_preds_b = cls_i_preds_b[keep]
-            cls_p_preds_b = cls_p_preds_b[keep]
-            reg_preds_b = reg_preds_b[keep]
-
-            reg_preds_b[:, :2] = reg_preds_b[:, :2].clamp(min=0)
-            reg_preds_b[:, 2] = reg_preds_b[:, 2].clamp(max=self.eval_size-1)
-            reg_preds_b[:, 3] = reg_preds_b[:, 3].clamp(max=self.eval_size-1)
-
-            _cls_i_preds.append(cls_i_preds_b)
-            _cls_p_preds.append(cls_p_preds_b)
-            _reg_preds.append(reg_preds_b)
+            list_cls_i_preds.append(cls_i_preds_b)
+            list_cls_p_preds.append(cls_p_preds_b)
+            list_reg_preds.append(reg_preds_b)
             
-        return _cls_i_preds, _cls_p_preds, _reg_preds
+        return torch.stack(list_cls_i_preds, dim=0), \
+                    torch.stack(list_cls_p_preds, dim=0), \
+                        torch.stack(list_reg_preds, dim=0)
 
 
 
@@ -333,3 +322,43 @@ def get_loss(temp):
         num_pos = 1.0
     loss = (loss_cls + loss_reg) / num_pos
     return loss
+
+
+
+def get_pred(temp, nms_th, nms_iou, eval_size):
+    '''
+    Return:
+    cls_i_preds: (LongTensor(s1), LongTensor(s2), ...)
+    cls_p_preds: (FloatTensor(s1), FloatTensor(s2), ...)
+    reg_preds:   (FloatTensor(s1,4), FloatTensor(s2,4), ...)
+    '''
+    cls_i_preds, cls_p_preds, reg_preds = temp
+
+    list_cls_i_preds = []
+    list_cls_p_preds = []
+    list_reg_preds = []
+
+    for b in range(cls_i_preds.shape[0]):
+
+        cls_i_preds_b = cls_i_preds[b]
+        cls_p_preds_b = cls_p_preds[b]
+        reg_preds_b = reg_preds[b]
+        
+        mask = cls_p_preds_b > nms_th
+        cls_i_preds_b = cls_i_preds_b[mask]
+        cls_p_preds_b = cls_p_preds_b[mask]
+        reg_preds_b = reg_preds_b[mask]
+
+        keep = box_nms(reg_preds_b, cls_p_preds_b, nms_iou)
+        cls_i_preds_b = cls_i_preds_b[keep]
+        cls_p_preds_b = cls_p_preds_b[keep]
+        reg_preds_b = reg_preds_b[keep]
+
+        reg_preds_b[:, :2] = reg_preds_b[:, :2].clamp(min=0)
+        reg_preds_b[:, 2:4] = reg_preds_b[:, 2:4].clamp(max=eval_size-1)
+
+        list_cls_i_preds.append(cls_i_preds_b)
+        list_cls_p_preds.append(cls_p_preds_b)
+        list_reg_preds.append(reg_preds_b)
+    
+    return list_cls_i_preds, list_cls_p_preds, list_reg_preds
