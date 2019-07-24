@@ -4,14 +4,13 @@ import json
 import torchvision.transforms as transforms
 from utils_box.dataset import Dataset_CSV
 from utils_box.eval_csv import eval_detection
-from detector import Detector
+from detector import Detector, get_loss, get_pred
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import os
 
 
-
-# TODO: ============================
+# TODO: Set your coco_table_file, coco_anno_root and set_name
 coco_table_file = 'data/coco_table.json'
 coco_anno_root = '/home1/xyt/dataset/coco17/'
 set_name = 'val2017'

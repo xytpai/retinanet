@@ -8,13 +8,14 @@ from utils_box.eval_csv import eval_detection
 from detector import Detector, get_loss, get_pred
 
 
+# Read train.json and set current GPU (for nms_cuda)
 with open('train.json', 'r') as load_f:
     cfg = json.load(load_f)
+torch.cuda.set_device(cfg['device'][0])
 
 
+# Prepare the network and read log
 net = Detector(pretrained=cfg['pretrain'])
-
-
 log = []
 device_out = 'cuda:%d' % (cfg['device'][0])
 if cfg['load']:
@@ -25,6 +26,7 @@ net = net.cuda(cfg['device'][0])
 net.train()
 
 
+# Get train/eval dataset and dataloader
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
@@ -43,23 +45,22 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
                     shuffle=False, num_workers=0, collate_fn=dataset_eval.collate_fn)
 
 
+# Prepare optimizer
 lr = cfg['lr']
 lr_decay = cfg['lr_decay']
-
-
 opt = torch.optim.SGD(net.parameters(), lr=lr, 
             momentum=cfg['momentum'], weight_decay=cfg['weight_decay'])
 
 
+# Run epoch
 epoch = 0
-
-for epoch_num in cfg['epoch_num']:
+for epoch_num in cfg['epoch_num']: # 3 for example
 
     for param_group in opt.param_groups:
         param_group['lr'] = lr
 
     for e in range(epoch_num):
-        
+
         if cfg['freeze_bn']:
             net.module.backbone.freeze_bn()
 
@@ -79,7 +80,7 @@ for epoch_num in cfg['epoch_num']:
             totaltime = int((time_end - time_start) * 1000)
             print('epoch:%d, step:%d/%d, loss:%f, maxMem:%dMB, time:%dms' % \
                 (epoch, i*cfg['nbatch_train'], len(dataset_train), loss, maxmem, totaltime))
-        
+
         # Eval
         with torch.no_grad():
             net.eval()
@@ -110,8 +111,6 @@ for epoch_num in cfg['epoch_num']:
                 print('  Eval: {}/{}'.format(i*cfg['nbatch_eval'], len(dataset_eval)), end='\r')
             ap_iou = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
             ap_res = []
-            print(len(pred_bboxes), len(pred_labels))
-            print(len(gt_bboxes), len(gt_labels))
             for iou_th in ap_iou:
                 res = eval_detection(pred_bboxes, pred_labels, 
                             pred_scores, gt_bboxes, gt_labels, iou_th=iou_th)

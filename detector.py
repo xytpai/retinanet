@@ -126,13 +126,18 @@ class Detector(nn.Module):
         label_box:   FloatTensor(batch_num, N_max, 4) or None
 
         Return:
-        loss_cls: FloatTensor(1)
-        loss_reg: FloatTensor(1)
-        num_pos:  FloatTensor(1)
-        or
+        if label_class == None:
+        tuple(
+        loss_cls: FloatTensor(1), # sum
+        loss_reg: FloatTensor(1), # sum
+        num_pos:  FloatTensor(1), # sum
+        )
+        else:
+        tuple(
         cls_i_preds: LongTensor(batch_num, topk)
         cls_p_preds: FloatTensor(batch_num, topk)
         reg_preds:   FloatTensor(batch_num, topk, 4)
+        )
         '''
         
         C3, C4, C5 = self.backbone(x)
@@ -202,7 +207,7 @@ class Detector(nn.Module):
 
         Return:
         targets_cls: LongTensor(batch_num, an)
-        targets_reg:   FloatTensor(batch_num, an, 4)
+        targets_reg: FloatTensor(batch_num, an, 4)
         '''
         label_class_out = []
         label_box_out   = []
@@ -220,7 +225,7 @@ class Detector(nn.Module):
                 label_box_out.append(label_box_out_b)
                 continue
             
-            ############################可优化项==============================
+            ############################==============================
             iou_pos_mask = iou > self.iou_th[1] # [an, Nb]
             iou_neg_mask = iou < self.iou_th[0] # [an, Nb]
             label_select = torch.argmax(iou, dim=1)   # [an]
@@ -254,7 +259,7 @@ class Detector(nn.Module):
             f1_f2_1 = (lby_lbx_1 - ay_ax) / ah_aw
             f3_f4_1 = (lbh_lbw_1 / ah_aw + 1e-10).log()
             label_box_out_b[anchors_pos_mask] = torch.cat([f1_f2_1, f3_f4_1], dim=1)
-            ############################可优化项==============================
+            ############################==============================
             
             label_class_out.append(label_class_out_b)
             label_box_out.append(label_box_out_b)
@@ -327,6 +332,11 @@ def get_loss(temp):
 
 def get_pred(temp, nms_th, nms_iou, eval_size):
     '''
+    temp:
+    cls_i_preds: LongTensor(batch_num, topk)
+    cls_p_preds: FloatTensor(batch_num, topk)
+    reg_preds:   FloatTensor(batch_num, topk, 4)
+
     Return:
     cls_i_preds: (LongTensor(s1), LongTensor(s2), ...)
     cls_p_preds: (FloatTensor(s1), FloatTensor(s2), ...)
