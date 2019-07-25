@@ -57,10 +57,10 @@ self.classes = 20   # TODO: total 20 classes exclude background
 ```
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
-run train to get results. It takes about 10 hours with 5x Titan-Xp. 
-run analyze and got mAP@.5: **78.4%**
+run train to get results. It takes about 5 hours with 5x Titan-Xp. 
+run analyze and got mAP@.5: **78.7%**
 
-![](images/voc_r50_784_641.png)
+![](images/voc_r50_787_641.png)
 
 
 
@@ -93,7 +93,7 @@ First, configure train.json file, add your root.
     "weight_decay": 0.0001,
 
     "boxarea_th": 25,
-    "img_scale_min": 0.8,
+    "img_scale_min": 0.7,
     "crop_scale_min": 0.4,
     "aspect_ratio": [0.750, 1.333],
     "remain_min": 0.8,
