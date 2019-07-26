@@ -17,6 +17,8 @@ try:
         Return:
         keep:   LongTensor(s)
         '''
+        if bboxes.shape[0] == 0:
+            return torch.zeros(0).long()
         scores = scores.view(-1, 1)
         bboxes_scores = torch.cat([bboxes, scores], dim=1) # (n, 5)
         keep = nms_cuda.nms(bboxes_scores, threshold) # (s)
@@ -33,6 +35,8 @@ except ImportError:
         Return:
         keep:   LongTensor(s)
         '''
+        if bboxes.shape[0] == 0:
+            return torch.zeros(0).long()
         mode = 'union'
         eps=1e-10
         ymin, xmin, ymax, xmax = bboxes[:,0], bboxes[:,1], bboxes[:,2], bboxes[:,3]
