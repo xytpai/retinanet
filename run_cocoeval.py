@@ -52,7 +52,7 @@ with torch.no_grad():
 
         temp = net(img)
         cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.module.nms_th, net.module.nms_iou, net.module.eval_size)
+                net.nms_th, net.nms_iou, net.eval_size)
                 
         cls_i_preds = cls_i_preds[0].cpu()
         cls_p_preds = cls_p_preds[0].cpu()
@@ -81,12 +81,12 @@ with torch.no_grad():
 
                 results.append(image_result)
 
-        print('step:%d/%d' % (i, len(dataset_eval))
+        print('step:%d/%d' % (i, len(dataset_eval)), end='\r')
 
     json.dump(results, open('coco_bbox_results.json', 'w'), indent=4)
 
     coco = COCO(os.path.join(coco_anno_root, 'annotations', 'instances_' + set_name + '.json'))
-    coco_pred = COCOeval.loadRes('coco_bbox_results.json')
+    coco_pred = coco.loadRes('coco_bbox_results.json')
 
     # run COCO evaluation
     coco_eval = COCOeval(coco_true, coco_pred, 'bbox')
