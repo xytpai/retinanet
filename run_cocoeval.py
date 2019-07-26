@@ -89,7 +89,7 @@ with torch.no_grad():
     coco_pred = coco.loadRes('coco_bbox_results.json')
 
     # run COCO evaluation
-    coco_eval = COCOeval(coco_true, coco_pred, 'bbox')
+    coco_eval = COCOeval(coco, coco_pred, 'bbox')
     coco_eval.params.imgIds = coco_table['val_image_ids']
     coco_eval.evaluate()
     coco_eval.accumulate()
