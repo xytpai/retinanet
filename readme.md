@@ -58,9 +58,9 @@ self.classes = 20   # TODO: total 20 classes exclude background
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
 run train to get results. It takes about 5 hours with 5x Titan-Xp. 
-run analyze and got mAP@.5: **78.7%**
+run analyze and got mAP@.5: **77.7%**
 
-![](images/voc_r50_787_641.png)
+![](images/voc_r50_777_641.png)
 
 
 
