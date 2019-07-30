@@ -34,13 +34,13 @@ First, configure *train.json* file, add your root.
     "momentum": 0.9,
     "weight_decay": 0.0001,
 
-    "boxarea_th": 25,
-    "img_scale_min": 0.4,
-    "crop_scale_min": 0.2,
+    "boxarea_th": 16,
+    "img_scale_min": 0.6,
+    "crop_scale_min": 0.4,
     "aspect_ratio": [0.750, 1.333],
     "remain_min": 0.8,
 
-    "grad_clip": 5
+    "grad_clip": 0.1
 }
 ```
 
@@ -80,7 +80,7 @@ First, configure train.json file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [10,4,2],
+    "epoch_num": [16,6,4],
 
     "nbatch_train": 16,
     "nbatch_eval": 16,
@@ -92,13 +92,13 @@ First, configure train.json file, add your root.
     "momentum": 0.9,
     "weight_decay": 0.0001,
 
-    "boxarea_th": 25,
-    "img_scale_min": 0.7,
+    "boxarea_th": 16,
+    "img_scale_min": 0.6,
     "crop_scale_min": 0.4,
     "aspect_ratio": [0.750, 1.333],
     "remain_min": 0.8,
 
-    "grad_clip": 5
+    "grad_clip": 0.1
 }
 ```
 

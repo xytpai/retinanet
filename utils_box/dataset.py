@@ -94,12 +94,12 @@ class Dataset_CSV(data.Dataset):
         size = self.size
         if self.train:
             img, boxes = random_flip(img, boxes)
-            # img, boxes = random_rotation(img, boxes)
+            if random.random() < 0.5:
+                img, boxes = random_rotation(img, boxes)
             img, boxes, scale = random_resize_fix(img, boxes, size,
                 self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
-            img = transforms.ColorJitter(
-                    brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1
-                )(img)
+            if random.random() < 0.5:
+                img = transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)(img)
         else:
             img, boxes, scale = corner_fix(img, boxes, size)   
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
@@ -154,7 +154,7 @@ def corner_fix(img, boxes, size):
 
 
 
-def random_rotation(img, boxes, degree=6):
+def random_rotation(img, boxes, degree=5):
     d = random.uniform(-degree, degree)
     w, h = img.size
     rx0, ry0 = w/2.0, h/2.0
