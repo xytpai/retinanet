@@ -31,10 +31,10 @@ class Detector(nn.Module):
         ]
         self.scales = 5
         self.first_stride = 8
-        self.train_size = 1025
-        self.eval_size = 1025
-        self.iou_th = (0.4, 0.5)
-        self.classes = 80
+        self.train_size = 641
+        self.eval_size = 641
+        self.iou_th = (0.3, 0.5)
+        self.classes = 20
         self.nms_th = 0.05
         self.nms_iou = 0.5
         self.max_detections = 3000
@@ -247,8 +247,8 @@ class Detector(nn.Module):
         reg_preds = []
         for b in range(cls_out.shape[0]):
             reg_dyxyx = reg_out[b]
-            reg_dyxyx[, :2] = reg_dyxyx[, :2] * 0.2 * self.eval_anchors_hw
-            reg_dyxyx[, 2:] = reg_dyxyx[, 2:] * 0.2 * self.eval_anchors_hw
+            reg_dyxyx[:, :2] = reg_dyxyx[:, :2] * 0.2 * self.eval_anchors_hw
+            reg_dyxyx[:, 2:] = reg_dyxyx[:, 2:] * 0.2 * self.eval_anchors_hw
             reg_yxyx = reg_dyxyx + self.eval_anchors_yxyx
             reg_preds.append(reg_yxyx)
         reg_preds = torch.stack(reg_preds, dim=0)
