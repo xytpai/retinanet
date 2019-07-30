@@ -40,7 +40,7 @@ First, configure *train.json* file, add your root.
     "aspect_ratio": [0.750, 1.333],
     "remain_min": 0.8,
 
-    "grad_clip": 0.1
+    "grad_clip": 5
 }
 ```
 
@@ -98,7 +98,7 @@ First, configure train.json file, add your root.
     "aspect_ratio": [0.750, 1.333],
     "remain_min": 0.8,
 
-    "grad_clip": 0.1
+    "grad_clip": 5
 }
 ```
 
