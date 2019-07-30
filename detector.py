@@ -218,8 +218,9 @@ class Detector(nn.Module):
 
             lb_yxyx = label_box[b][label_select] # [S, 4]
             d_yxyx = lb_yxyx - self.train_anchors_yxyx[anchors_pos_mask] # (S, 4)
-            d_yxyx[:, :2] = d_yxyx[:, :2] / self.train_anchors_hw / 0.2
-            d_yxyx[:, 2:] = d_yxyx[:, 2:] / self.train_anchors_hw / 0.2
+            anchors_hw = self.train_anchors_hw[anchors_pos_mask]
+            d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
+            d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
             label_box_out_b[anchors_pos_mask] = d_yxyx
 
             label_class_out.append(label_class_out_b)
