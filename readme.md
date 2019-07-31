@@ -24,10 +24,10 @@ First, configure *train.json* file, add your root.
     "freeze_bn": true,
     "epoch_num": [20,10],
 
-    "nbatch_train": 40,
-    "nbatch_eval": 40,
-    "device": [5,6,7,8,9],
-    "num_workers": 10,
+    "nbatch_train": 21,
+    "nbatch_eval": 21,
+    "device": [1,2,3],
+    "num_workers": 7,
 
     "lr": 0.01,
     "lr_decay": 0.1,
@@ -52,15 +52,14 @@ from backbone import resnet50 as backbone
 # TODO: configure Detector
 self.train_size = 641
 self.eval_size = 641
-self.iou_th = (0.3, 0.5)
 self.classes = 20   # TODO: total 20 classes exclude background
 ```
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
 run train to get results. It takes about 5 hours with 5x Titan-Xp. 
-run analyze and got mAP@.5: **77.7%**
+run analyze and got mAP@.5: **79.5%**
 
-![](images/voc_r50_777_641.png)
+![](images/voc_r50_795_641.png)
 
 
 
@@ -106,7 +105,6 @@ Then, configure some parameters in *detector.py* file.
 
 ```python
 self.classes = 80   # TODO: total 80 classes exclude background
-self.iou_th = (0.4, 0.5)
 self.train_size = 1025
 self.eval_size = 1025
 ```
