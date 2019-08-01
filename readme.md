@@ -4,6 +4,9 @@ An unofficial implementation of RetinaNet in pytorch.
 Focal Loss for Dense Object Detection.
 https://arxiv.org/abs/1708.02002
 
+I reached **35.5** mAP on coco2017-val.
+
+![](images/demo.png)
 
 
 ## 1. VOC test
@@ -114,7 +117,7 @@ run analyze to get mAP curves.
 
 ![](images/coco_r50_355_1025.png)
 
-run cocoeval and got mAP: 35.5%
+run cocoeval and got mAP: **35.5%**
 
 ![](images/cocoeval.png)
 

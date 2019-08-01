@@ -20,7 +20,7 @@ net.eval()
 
 
 # TODO: Set nms_th
-# net.nms_th = 0.05
+net.nms_th = 0.5
 # ==================================
 
 
