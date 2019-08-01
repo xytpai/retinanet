@@ -114,12 +114,11 @@ self.train_size = 1025
 self.eval_size = 1025
 ```
 
-run train to get results. It takes about 40 hours with 8x Titan-Xp. 
-run analyze to get mAP curves.
+Run train to get results. It takes about 40 hours with 8x Titan-Xp. Run analyze to get mAP curves.
 
 ![](images/coco_r50_355_1025.png)
 
-run cocoeval and got mAP: **35.5%**
+Run cocoeval and got mAP: **35.5%**
 
 ```python
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.355
@@ -143,9 +142,7 @@ run cocoeval and got mAP: **35.5%**
 Like 2 in rain.json, modify key "epoch_num".
 
 ```json
-{
-    "epoch_num": [9,3,2],
-}
+"epoch_num": [9,3,2],
 ```
 
 Modify line-95 of *utils_box/dataset.py* as follows.
