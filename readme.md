@@ -2,9 +2,10 @@
 
 An unofficial implementation of RetinaNet in pytorch. 
 Focal Loss for Dense Object Detection.
+
 https://arxiv.org/abs/1708.02002
 
-I reached **35.5** mAP on coco2017-val.
+This repo achieves **35.5%** mAP at nearly 600px resolution with a Resnet-50 backbone. 
 
 ![](images/demo.png)
 
