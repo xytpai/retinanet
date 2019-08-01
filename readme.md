@@ -109,6 +109,10 @@ self.train_size = 1025
 self.eval_size = 1025
 ```
 
-run train to get results. It takes about _ hours with _x Titan-Xp. 
-run analyze and got mAP: _%
+run train to get results. It takes about 40 hours with 8x Titan-Xp. 
+run analyze and got mAP: 35.5%
+
+![](images/coco_r50_355_1025.png)
+
+![](images/cocoeval.png)
 
