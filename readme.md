@@ -139,7 +139,7 @@ Run cocoeval and got mAP: **35.5%**
 
 ## 3. COCO test (standard)
 
-Like 2 in rain.json, modify key "epoch_num".
+Like 2 in *train.json* modify key
 
 ```json
 "epoch_num": [9,3,2],
