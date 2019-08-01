@@ -10,6 +10,7 @@ This repo achieves **35.5%** mAP at nearly 600px resolution with a Resnet-50 bac
 ![](images/demo.png)
 
 
+
 ## 1. VOC test
 
 First, configure *train.json* file, add your root. 
@@ -67,7 +68,7 @@ run analyze and got mAP@.5: **79.5%**
 
 
 
-## 2. COCO test
+## 2. COCO test (data augmentation, longer time)
 
 First, configure train.json file, add your root. 
 
@@ -120,5 +121,46 @@ run analyze to get mAP curves.
 
 run cocoeval and got mAP: **35.5%**
 
-![](images/cocoeval.png)
+```python
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.355
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.536
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.382
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.194
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.391
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.472
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.294
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.454
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.483
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.291
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.529
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.612
+```
+
+
+
+## 3. COCO test (standard)
+
+Like 2 in rain.json, modify key "epoch_num".
+
+```json
+{
+    "epoch_num": [9,3,2],
+}
+```
+
+Modify line-95 of *utils_box/dataset.py* as follows.
+
+```python
+if self.train:
+    img, boxes = random_flip(img, boxes)
+    # if random.random() < 0.5:
+    #     img, boxes = random_rotation(img, boxes)
+    # img, boxes, scale = random_resize_fix(img, boxes, size,
+    #     self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
+    # if random.random() < 0.5:
+    #     img = transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)(img)
+    img, boxes, scale = corner_fix(img, boxes, size)   
+```
+
+It takes about 21 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
 
