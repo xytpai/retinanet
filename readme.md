@@ -7,7 +7,7 @@ https://arxiv.org/abs/1708.02002
 
 This repo achieves **35.5%** mAP at nearly 600px resolution with a Resnet-50 backbone. 
 
-![](images/demo.png)
+![](images/pred_demo.bmp)
 
 
 
