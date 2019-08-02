@@ -36,7 +36,8 @@ dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file
     img_scale_min = cfg['img_scale_min'], 
     crop_scale_min = cfg['crop_scale_min'], 
     aspect_ratio = cfg['aspect_ratio'], 
-    remain_min = cfg['remain_min'])
+    remain_min = cfg['remain_min'],
+    augmentation = cfg['augmentation'])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
     size=net.module.eval_size, train=False, transform=transform)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 

@@ -22,10 +22,11 @@
     "weight_decay": 0.0001,
 
     "boxarea_th": 16,
+    "grad_clip": 5,
+    
+    "augmentation": true,
     "img_scale_min": 0.6,
     "crop_scale_min": 0.4,
     "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.8,
-
-    "grad_clip": 5
+    "remain_min": 0.8
 }

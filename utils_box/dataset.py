@@ -11,7 +11,8 @@ import torchvision.transforms as transforms
 class Dataset_CSV(data.Dataset):
     def __init__(self, root, list_file, name_file, size=641, 
                     train=True, transform=None, boxarea_th=25,
-                    img_scale_min=0.2, crop_scale_min=0.1, aspect_ratio=(3./4, 4./3), remain_min=0.8):
+                    img_scale_min=0.2, crop_scale_min=0.1, aspect_ratio=(3./4, 4./3), remain_min=0.8,
+                    augmentation=True):
         ''''
         Provide:
         self.fnames:      [fname1, fname2, fname3, ...] # image filename
@@ -40,6 +41,7 @@ class Dataset_CSV(data.Dataset):
         self.crop_scale_min = crop_scale_min
         self.aspect_ratio = aspect_ratio
         self.remain_min = remain_min
+        self.augmentation = augmentation
         self.fnames = []
         self.boxes = []
         self.labels = []
@@ -94,14 +96,17 @@ class Dataset_CSV(data.Dataset):
         size = self.size
         if self.train:
             img, boxes = random_flip(img, boxes)
-            if random.random() < 0.5:
-                img, boxes = random_rotation(img, boxes)
-            img, boxes, scale = random_resize_fix(img, boxes, size,
-                self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
-            if random.random() < 0.5:
-                img = transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)(img)
+            if self.augmentation:
+                if random.random() < 0.5:
+                    img, boxes = random_rotation(img, boxes)
+                img, boxes, scale = random_resize_fix(img, boxes, size,
+                    self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
+                if random.random() < 0.5:
+                    img = transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)(img)
+            else:
+                img, boxes, scale = corner_fix(img, boxes, size)
         else:
-            img, boxes, scale = corner_fix(img, boxes, size)   
+            img, boxes, scale = corner_fix(img, boxes, size)
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
         area = hw[:, 0] * hw[:, 1]       # [N]
         mask = area > self.boxarea_th
