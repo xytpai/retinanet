@@ -5,7 +5,7 @@ Focal Loss for Dense Object Detection.
 
 https://arxiv.org/abs/1708.02002
 
-This repo achieves **35.5%** mAP at nearly 600px resolution with a Resnet-50 backbone. 
+This repo achieves **35.5%** mAP at nearly 800px resolution with a Resnet-50 backbone. 
 
 ![](images/pred_demo.bmp)
 
