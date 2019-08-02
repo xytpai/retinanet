@@ -9,7 +9,7 @@
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [16,6,4],
+    "epoch_num": [9,3,2],
 
     "nbatch_train": 16,
     "nbatch_eval": 16,
@@ -24,7 +24,7 @@
     "boxarea_th": 16,
     "grad_clip": 5,
     
-    "augmentation": true,
+    "augmentation": false,
     "img_scale_min": 0.6,
     "crop_scale_min": 0.4,
     "aspect_ratio": [0.750, 1.333],
