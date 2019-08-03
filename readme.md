@@ -132,13 +132,32 @@ self.eval_size = 1025
 It takes about 21 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
 
 ```python
-DEBUGGING...
+map_mean
+[0.1248 0.1764 0.1948 0.2136 0.2331 0.2456 0.254  0.2457 0.2561 0.3139
+ 0.3185 0.3196 0.3225 0.3224]
+map_50
+[0.2168 0.2968 0.319  0.3452 0.3729 0.3891 0.4021 0.3941 0.4125 0.4815
+ 0.4863 0.4879 0.4922 0.4924]
+map_75
+[0.1277 0.1832 0.2077 0.2286 0.2465 0.2631 0.2734 0.2608 0.272  0.3372
+ 0.3419 0.3438 0.3457 0.3448]
 ```
 
-Run cocoeval and got mAP: **00.0%**
+Run cocoeval and got mAP: **32.5%**
 
 ```python
-DEBUGGING...
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.325
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.497
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.349
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.154
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.361
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.438
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.274
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.425
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.453
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.247
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.500
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.581
 ```
 
 
