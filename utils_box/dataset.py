@@ -97,16 +97,16 @@ class Dataset_CSV(data.Dataset):
         if self.train:
             img, boxes = random_flip(img, boxes)
             if self.augmentation:
-                if random.random() < 0.5:
-                    img, boxes = random_rotation(img, boxes)
-                img, boxes, scale = random_resize_fix(img, boxes, size,
-                    self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
-                if random.random() < 0.5:
+                if random.random() < 0.4:
                     img = transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)(img)
+                if random.random() < 0.2:
+                    img, boxes = random_rotation(img, boxes)
+                img, boxes, scale, oh, ow = random_resize_fix(img, boxes, size,
+                    self.img_scale_min, self.crop_scale_min, self.aspect_ratio, self.remain_min)
             else:
-                img, boxes, scale = corner_fix(img, boxes, size)
+                img, boxes, scale, oh, ow = corner_fix(img, boxes, size)
         else:
-            img, boxes, scale = corner_fix(img, boxes, size)
+            img, boxes, scale, oh, ow = corner_fix(img, boxes, size)
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
         area = hw[:, 0] * hw[:, 1]       # [N]
         mask = area > self.boxarea_th
@@ -114,7 +114,7 @@ class Dataset_CSV(data.Dataset):
         labels = labels[mask]
         if self.transform is not None:
             img = self.transform(img)
-        return img, boxes, labels, scale
+        return img, boxes, labels, scale, oh, ow
 
     def collate_fn(self, data):
         '''
@@ -123,11 +123,13 @@ class Dataset_CSV(data.Dataset):
         boxes   FloatTensor(batch_num, N_max, 4)
         Labels  LongTensor(batch_num, N_max)
         scale   FloatTensor(batch_num)
+        oh:     FloatTensor(batch_num)
+        ow:     FloatTensor(batch_num)
 
         Note:
         - Ni can be zero
         '''
-        img, boxes, labels, scale = zip(*data)
+        img, boxes, labels, scale, oh, ow = zip(*data)
         img = torch.stack(img, dim=0)
         batch_num = len(boxes)
         N_max = 0
@@ -140,7 +142,9 @@ class Dataset_CSV(data.Dataset):
             boxes_t[b, 0:boxes[b].shape[0]] = boxes[b]
             labels_t[b, 0:boxes[b].shape[0]] = labels[b]
         scale_t = torch.FloatTensor(scale)
-        return img, boxes_t, labels_t, scale_t
+        oh = torch.FloatTensor(oh)
+        ow = torch.FloatTensor(ow)
+        return img, boxes_t, labels_t, scale_t, oh, ow
 
 
 
@@ -155,11 +159,11 @@ def corner_fix(img, boxes, size):
     img = img.crop((0, 0, size, size))
     if boxes.shape[0] != 0:
         boxes = boxes*torch.Tensor([sh,sw,sh,sw])
-    return img, boxes, sw
+    return img, boxes, sw, oh, ow
 
 
 
-def random_rotation(img, boxes, degree=5):
+def random_rotation(img, boxes, degree=6):
     d = random.uniform(-degree, degree)
     w, h = img.size
     rx0, ry0 = w/2.0, h/2.0
@@ -217,7 +221,7 @@ def random_resize_fix(img, boxes, size,
             img = img.crop((-ofst_w, -ofst_h, size-ofst_w, size-ofst_h))
             if boxes.shape[0] != 0:
                 boxes += torch.FloatTensor([ofst_h, ofst_w, ofst_h, ofst_w])
-            return img, boxes, 10
+            return img, boxes, 10, oh, ow
         elif method == 'corner_fix':
             return corner_fix(img, boxes, size)
         elif method == 'random_resize_crop':
@@ -261,7 +265,7 @@ def random_resize_fix(img, boxes, size,
                 img = img.resize((ow,oh), Image.BILINEAR)
                 boxes *= torch.FloatTensor([sh,sw,sh,sw])
                 # scale = max(img.shape[0], img.shape[1]) / float(size)
-                return img, boxes, -10
+                return img, boxes, -10, oh, ow
 
 
 
@@ -333,7 +337,7 @@ if __name__ == '__main__':
         remain_min = cfg['remain_min'])
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
         shuffle=True, num_workers=0, collate_fn=dataset.collate_fn)
-    for imgs, boxes, labels, scales in dataloader:
+    for imgs, boxes, labels, scales, oh, ow in dataloader:
         p10=0
         n10=0
         print(labels)
@@ -348,7 +352,7 @@ if __name__ == '__main__':
             if int(scales[i]) == -10:
                 n10 += 1
         # print('+10/-10:', float(p10/n10))
-        idx = int(input('idx:'))
-        # idx = 0
+        # idx = int(input('idx:'))
+        idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         break

@@ -45,13 +45,13 @@ for filename in os.listdir('images/'):
         _boxes = torch.zeros(0,4)
         img_cpy = img.copy()
         img_cpy = transforms.ToTensor()(img_cpy)
-        img, _boxes, scale = corner_fix(img, _boxes, net.eval_size)
+        img, _boxes, scale, oh, ow = corner_fix(img, _boxes, net.view_size)
         img = transform(img)
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2]).cuda()
         with torch.no_grad():
             temp = net(img)
             cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.nms_th, net.nms_iou, net.eval_size)
+                net.nms_th, net.nms_iou, oh, ow)
             name = 'images/pred_'+filename.split('.')[0]+'.bmp'
             reg_preds[0] /= scale
             show_bbox(img_cpy, reg_preds[0].cpu(), cls_i_preds[0].cpu(), LABEL_NAMES, name)

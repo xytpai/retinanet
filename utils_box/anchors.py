@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 
-def box_iou(box1, box2, eps=1e-10):
+def box_iou(box1, box2):
     '''
     Param:
     box1:   FloatTensor(n,4) # 4: ymin, xmin, ymax, xmax
@@ -15,10 +15,10 @@ def box_iou(box1, box2, eps=1e-10):
     '''
     tl = torch.max(box1[:,None,:2], box2[:,:2])  # [n,m,2]
     br = torch.min(box1[:,None,2:], box2[:,2:])  # [n,m,2]
-    hw = (br-tl+eps).clamp(min=0)  # [n,m,2]
+    hw = (br-tl).clamp(min=0)  # [n,m,2]
     inter = hw[:,:,0] * hw[:,:,1]  # [n,m]
-    area1 = (box1[:,2]-box1[:,0]+eps) * (box1[:,3]-box1[:,1]+eps)  # [n,]
-    area2 = (box2[:,2]-box2[:,0]+eps) * (box2[:,3]-box2[:,1]+eps)  # [m,]
+    area1 = (box1[:,2]-box1[:,0]) * (box1[:,3]-box1[:,1])  # [n,]
+    area2 = (box2[:,2]-box2[:,0]) * (box2[:,3]-box2[:,1])  # [m,]
     iou = inter / (area1[:,None] + area2 - inter)
     return iou
 

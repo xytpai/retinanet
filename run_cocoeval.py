@@ -38,7 +38,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.eval_size, train=False, transform=transform)
+    size=net.view_size, train=False, transform=transform)
 
 
 # Eval
@@ -46,13 +46,13 @@ with torch.no_grad():
     results = []
     for i in range(len(dataset_eval)):
 
-        img, bbox, label, scale = dataset_eval[i]
+        img, bbox, label, scale, oh, ow = dataset_eval[i]
         img = img.cuda(cfg['device'][0])
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
 
         temp = net(img)
         cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.nms_th, net.nms_iou, net.eval_size)
+                net.nms_th, net.nms_iou, oh, ow)
                 
         cls_i_preds = cls_i_preds[0].cpu()
         cls_p_preds = cls_p_preds[0].cpu()

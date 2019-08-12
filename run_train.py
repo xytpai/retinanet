@@ -31,7 +31,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file'], 
-    size=net.module.train_size, train=True, transform=transform, 
+    size=net.module.view_size, train=True, transform=transform, 
     boxarea_th = cfg['boxarea_th'], 
     img_scale_min = cfg['img_scale_min'], 
     crop_scale_min = cfg['crop_scale_min'], 
@@ -39,7 +39,7 @@ dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file
     remain_min = cfg['remain_min'],
     augmentation = cfg['augmentation'])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.eval_size, train=False, transform=transform)
+    size=net.module.view_size, train=False, transform=transform)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 
                     shuffle=True, num_workers=cfg['num_workers'], collate_fn=dataset_train.collate_fn)
 loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_eval'], 
@@ -58,7 +58,7 @@ WARM_UP_ITERS = 500
 WARM_UP_FACTOR = 1.0 / 3.0
 if cfg['freeze_bn']:
     net.module.backbone.freeze_bn()
-for i, (img, bbox, label, scale) in enumerate(loader_train):
+for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
     alpha = float(i) / WARM_UP_ITERS
     warmup_factor = WARM_UP_FACTOR * (1.0 - alpha) + alpha
     for param_group in opt.param_groups:
@@ -93,7 +93,7 @@ for epoch_num in cfg['epoch_num']: # 3 for example
             net.module.backbone.freeze_bn()
 
         # Train
-        for i, (img, bbox, label, scale) in enumerate(loader_train):
+        for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
             time_start = time.time()
             opt.zero_grad()
             temp = net(img, label, bbox)
@@ -117,10 +117,10 @@ for epoch_num in cfg['epoch_num']: # 3 for example
             pred_scores = []
             gt_bboxes = []
             gt_labels = []
-            for i, (img, bbox, label, scale) in enumerate(loader_eval):
+            for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_eval):
                 temp = net(img)
                 cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                        net.module.nms_th, net.module.nms_iou, net.module.eval_size)
+                        net.module.nms_th, net.module.nms_iou, oh, ow)
                 for idx in range(len(cls_i_preds)):
                     cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
                     cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()
