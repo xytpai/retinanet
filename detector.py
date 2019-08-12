@@ -209,7 +209,7 @@ class Detector(nn.Module):
             anchors_hw = self.view_anchors_hw[anchors_pos_mask]
             d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
             d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
-            label_box_out_b[anchors_pos_mask] = d_yxyx
+            targets_reg_b[anchors_pos_mask] = d_yxyx
             targets_cls.append(targets_cls_b)
             targets_reg.append(targets_reg_b)
         return torch.stack(targets_cls), torch.stack(targets_reg)
