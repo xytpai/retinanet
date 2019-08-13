@@ -27,11 +27,8 @@ net.train()
 
 
 # Get train/eval dataset and dataloader
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file'], 
-    size=net.module.view_size, train=True, transform=transform, 
+    size=net.module.view_size, train=True, normalize=True, 
     boxarea_th = cfg['boxarea_th'], 
     img_scale_min = cfg['img_scale_min'], 
     crop_scale_min = cfg['crop_scale_min'], 
@@ -39,7 +36,7 @@ dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file
     remain_min = cfg['remain_min'],
     augmentation = cfg['augmentation'])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.view_size, train=False, transform=transform)
+    size=net.module.view_size, train=False, normalize=True)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 
                     shuffle=True, num_workers=cfg['num_workers'], collate_fn=dataset_train.collate_fn)
 loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_eval'], 

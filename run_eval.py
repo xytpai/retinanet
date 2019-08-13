@@ -30,11 +30,8 @@ net.eval()
 
 
 # Get eval dataset and dataloader
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.module.view_size, train=False, transform=transform)
+    size=net.module.view_size, train=False, normalize=True)
 loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_eval'], 
                     shuffle=False, num_workers=0, collate_fn=dataset_eval.collate_fn)
 

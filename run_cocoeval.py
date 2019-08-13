@@ -34,11 +34,8 @@ net.eval()
 
 
 # Get eval dataset
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
-    size=net.view_size, train=False, transform=transform)
+    size=net.view_size, train=False, normalize=True)
 
 
 # Eval
