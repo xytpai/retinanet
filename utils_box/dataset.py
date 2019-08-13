@@ -9,8 +9,8 @@ import torchvision.transforms as transforms
 
 
 class Dataset_CSV(data.Dataset):
-    def __init__(self, root, list_file, name_file, size=641, 
-                    train=True, transform=None, boxarea_th=25,
+    def __init__(self, root, list_file, name_file, 
+                    size=641, train=True, normalize=True, boxarea_th=25,
                     img_scale_min=0.2, crop_scale_min=0.1, aspect_ratio=(3./4, 4./3), remain_min=0.8,
                     augmentation=True):
         ''''
@@ -21,21 +21,17 @@ class Dataset_CSV(data.Dataset):
         self.LABEL_NAMES: ['background', 'person', 'bicycle', ...] in name_file
 
         Note:
-        - root: folder of jpg images
-        - list_file: img_name.jpg ymin1, xmin1, ymax1, xmax1, label1, ... /n
-                     ...
+        - root: folder for jpg images
+        - list_file: img_name.jpg ymin1 xmin1 ymax1 xmax1 label1 ... /n
         - name_file: background /n class_name1 /n class_name2 /n ...
         - if not have object -> xxx.jpg 0 0 0 0 0
-        - if self.train == True: random_flip, random_resize_fix
-          else: corner_fix
         - remove box when area <= boxarea_th
         - label == 0 indecates background 
-        - box-4 indecates ymin, xmin, ymax, xmax
         '''
         self.root = root
         self.size = size
         self.train = train
-        self.transform = transform
+        self.normalize = normalize
         self.boxarea_th = boxarea_th
         self.img_scale_min = img_scale_min
         self.crop_scale_min = crop_scale_min
@@ -45,50 +41,47 @@ class Dataset_CSV(data.Dataset):
         self.fnames = []
         self.boxes = []
         self.labels = []
+        self.LABEL_NAMES = []
         with open(list_file) as f:
             lines = f.readlines()
             self.num_samples = len(lines)
-        for line in lines:
-            splited = line.strip().split()
-            self.fnames.append(splited[0])
-            num_boxes = (len(splited) - 1) // 5
-            box = []
-            label = []
-            for i in range(num_boxes):
-                ymin = splited[1+5*i]
-                xmin = splited[2+5*i]
-                ymax = splited[3+5*i]
-                xmax = splited[4+5*i]
-                c = splited[5+5*i]
-                box.append([float(ymin),float(xmin),float(ymax),float(xmax)])
-                label.append(int(c))
-            self.boxes.append(torch.FloatTensor(box))
-            self.labels.append(torch.LongTensor(label))
+            for line in lines:
+                splited = line.strip().split()
+                self.fnames.append(splited[0])
+                num_boxes = (len(splited) - 1) // 5
+                box = []
+                label = []
+                for i in range(num_boxes):
+                    ymin = splited[1+5*i]
+                    xmin = splited[2+5*i]
+                    ymax = splited[3+5*i]
+                    xmax = splited[4+5*i]
+                    c = splited[5+5*i]
+                    box.append([float(ymin),float(xmin),float(ymax),float(xmax)])
+                    label.append(int(c))
+                self.boxes.append(torch.FloatTensor(box))
+                self.labels.append(torch.LongTensor(label))
         with open(name_file) as f:
             lines = f.readlines()
-        self.LABEL_NAMES = []
-        for line in lines:
-            self.LABEL_NAMES.append(line.strip())
+            for line in lines:
+                self.LABEL_NAMES.append(line.strip())
     
+
     def __len__(self):
         return self.num_samples
     
+
     def __getitem__(self, idx):
         '''
         Return:
-        img:    FloatTensor(3, size, size) or PILImage(if self.transform==None)
+        img:    FloatTensor(3, size, size)
         boxes:  FloatTensor(box_num, 4)
         labels: LongTensor(box_num)
         scale:  float scalar
-
-        Note:
-        - box_num can be zero
-        - if self.train == True: random_flip, random_resize_fix
-          else: corner_fix
-        - remove box when area <= boxarea_th
+        oh:     int scalar
+        ow:     int scalar
         '''
-        fname = self.fnames[idx]
-        img = Image.open(os.path.join(self.root, fname))
+        img = Image.open(os.path.join(self.root, self.fnames[idx]))
         if img.mode != 'RGB':
             img = img.convert('RGB')
         boxes = self.boxes[idx].clone()
@@ -112,9 +105,11 @@ class Dataset_CSV(data.Dataset):
         mask = area > self.boxarea_th
         boxes = boxes[mask]
         labels = labels[mask]
-        if self.transform is not None:
-            img = self.transform(img)
+        img = transforms.ToTensor()(img)
+        if self.normalize:
+            img = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))(img)
         return img, boxes, labels, scale, oh, ow
+
 
     def collate_fn(self, data):
         '''
@@ -125,9 +120,6 @@ class Dataset_CSV(data.Dataset):
         scale   FloatTensor(batch_num)
         oh:     FloatTensor(batch_num)
         ow:     FloatTensor(batch_num)
-
-        Note:
-        - Ni can be zero
         '''
         img, boxes, labels, scale, oh, ow = zip(*data)
         img = torch.stack(img, dim=0)
@@ -163,7 +155,7 @@ def corner_fix(img, boxes, size):
 
 
 
-def random_rotation(img, boxes, degree=6):
+def random_rotation(img, boxes, degree=5):
     d = random.uniform(-degree, degree)
     w, h = img.size
     rx0, ry0 = w/2.0, h/2.0
@@ -314,32 +306,26 @@ if __name__ == '__main__':
 
     #TODO: parameters
     train = True
-    size = 641
-    area_th = 25
+    size = 1025
+    boxarea_th = 16
+    img_scale_min = 0.6
+    crop_scale_min = 0.2
+    aspect_ratio = [3./4, 4./3]
+    remain_min = 0.8
+    augmentation = True
     batch_size = 8
-    csv_root  = 'D:\\dataset\\VOC0712_trainval\\JPEGImages'
-    csv_list  = '../data/voc_trainval.txt'
-    csv_name  = '../data/voc_name.txt'
-
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
-    import json
-    with open('../train.json', 'r') as load_f:
-        cfg = json.load(load_f)
+    csv_root  = 'D:\\dataset\\coco17\\images'
+    csv_list  = '../data/coco_train2017.txt'
+    csv_name  = '../data/coco_name.txt'
     
     dataset = Dataset_CSV(csv_root, csv_list, csv_name, 
-        size=size, train=train, transform=transform, 
-        boxarea_th = cfg['boxarea_th'],
-        img_scale_min = cfg['img_scale_min'], 
-        crop_scale_min = cfg['crop_scale_min'], 
-        aspect_ratio = cfg['aspect_ratio'], 
-        remain_min = cfg['remain_min'])
+        size=size, train=train, normalize=False, boxarea_th=boxarea_th,
+        img_scale_min=img_scale_min, crop_scale_min=crop_scale_min, 
+        aspect_ratio=aspect_ratio, remain_min=remain_min, 
+        augmentation=augmentation)
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
         shuffle=True, num_workers=0, collate_fn=dataset.collate_fn)
     for imgs, boxes, labels, scales, oh, ow in dataloader:
-        p10=0
-        n10=0
         print(labels)
         print(imgs.shape)
         print(boxes.shape)
@@ -347,11 +333,6 @@ if __name__ == '__main__':
         print(scales.shape)
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, scales[i])
-            if int(scales[i]) == 10:
-                p10 += 1
-            if int(scales[i]) == -10:
-                n10 += 1
-        # print('+10/-10:', float(p10/n10))
         # idx = int(input('idx:'))
         idx = 0
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
