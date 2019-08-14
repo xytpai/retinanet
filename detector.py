@@ -50,6 +50,11 @@ class Detector(nn.Module):
         self.conv_5 =nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.conv_4 =nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.conv_3 =nn.Conv2d(256, 256, kernel_size=3, padding=1)
+
+        # reinit fpn =======================================================
+        for module in [self.conv_out6, self.conv_out7]:
+            nn.init.kaiming_uniform_(module.weight, a=1)
+            nn.init.constant_(module.bias, 0)
         
         # head =======================================================
         self.conv_cls = nn.Sequential(
@@ -117,17 +122,15 @@ class Detector(nn.Module):
         C3, C4, C5 = self.backbone(x)
         
         P5 = self.prj_5(C5)
-        P5_upsampled = self.upsample(P5)
-        P5 = self.conv_5(P5)
-
         P4 = self.prj_4(C4)
-        P4 = P5_upsampled + P4
-        P4_upsampled = self.upsample(P4)
-        P4 = self.conv_4(P4)
-
         P3 = self.prj_3(C3)
-        P3 = P4_upsampled + P3
+        
+        P4 = P4 + self.upsample(P5)
+        P3 = P3 + self.upsample(P4)
+
         P3 = self.conv_3(P3)
+        P4 = self.conv_4(P4)
+        P5 = self.conv_5(P5)
 
         P6 = self.conv_out6(C5)
         P7 = self.conv_out7(self.relu(P6))
