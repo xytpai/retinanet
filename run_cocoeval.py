@@ -46,6 +46,7 @@ with torch.no_grad():
         img, bbox, label, scale, oh, ow = dataset_eval[i]
         img = img.cuda(cfg['device'][0])
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2])
+        oh, ow = torch.Tensor([oh]), torch.Tensor([ow])
 
         temp = net(img)
         cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 

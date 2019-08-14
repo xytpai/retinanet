@@ -46,6 +46,7 @@ for filename in os.listdir('images/'):
         img_cpy = img.copy()
         img_cpy = transforms.ToTensor()(img_cpy)
         img, _boxes, scale, oh, ow = corner_fix(img, _boxes, net.view_size)
+        oh, ow = torch.Tensor([oh]), torch.Tensor([ow])
         img = transform(img)
         img = img.view(1, img.shape[0], img.shape[1], img.shape[2]).cuda()
         with torch.no_grad():
