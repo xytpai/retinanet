@@ -192,19 +192,19 @@ class Detector(nn.Module):
                     dtype=torch.long, device=label_class.device)
             targets_reg_b = torch.zeros(self.view_hwan, 4, 
                     dtype=torch.float, device=label_class.device)
-            iou = box_iou(self.view_anchors_yxyx, label_box[b]) # [hwan, N]
+            iou = box_iou(self.view_anchors_yxyx, label_box[b]) # (hwan, N)
             if (iou.shape[1] <= 0):
                 targets_cls_b[:] = 0
                 targets_cls.append(targets_cls_b)
                 targets_reg.append(targets_reg_b)
                 continue
             iou_max, iou_max_idx = torch.max(iou, dim=1) # (hwan), (hwan)
-            anchors_pos_mask = iou_max > self.iou_th[1] # (hwan)
+            anchors_pos_mask = iou_max >= self.iou_th[1] # (hwan)
             anchors_neg_mask = iou_max < self.iou_th[0] # (hwan)
             # neg
             targets_cls_b[anchors_neg_mask] = 0
-            label_select = iou_max_idx[anchors_pos_mask]
             # pos
+            label_select = iou_max_idx[anchors_pos_mask]
             targets_cls_b[anchors_pos_mask] = label_class[b][label_select]
             # pos-reg
             lb_yxyx = label_box[b][label_select] # [S, 4]
@@ -213,6 +213,16 @@ class Detector(nn.Module):
             d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
             d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
             targets_reg_b[anchors_pos_mask] = d_yxyx
+            # pos: for each gt, which anchor best overlaps with it
+            gt_iou_max, gt_iou_max_idx = torch.max(iou, dim=0) # (N), (N)
+            targets_cls_b[gt_iou_max_idx] = label_class[b]
+            # pos-reg: for each gt, which anchor best overlaps with it
+            _d_yxyx = label_box[b] - self.view_anchors_yxyx[gt_iou_max_idx] # (N, 4)
+            _anchors_hw = self.view_anchors_hw[gt_iou_max_idx]
+            _d_yxyx[:, :2] = _d_yxyx[:, :2] / _anchors_hw / 0.2
+            _d_yxyx[:, 2:] = _d_yxyx[:, 2:] / _anchors_hw / 0.2
+            targets_reg_b[gt_iou_max_idx] = _d_yxyx
+            # append
             targets_cls.append(targets_cls_b)
             targets_reg.append(targets_reg_b)
         return torch.stack(targets_cls), torch.stack(targets_reg)
