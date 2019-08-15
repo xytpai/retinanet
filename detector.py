@@ -213,15 +213,15 @@ class Detector(nn.Module):
             d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
             d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
             targets_reg_b[anchors_pos_mask] = d_yxyx
-            # pos: for each gt, which anchor best overlaps with it
-            gt_iou_max, gt_iou_max_idx = torch.max(iou, dim=0) # (N), (N)
-            targets_cls_b[gt_iou_max_idx] = label_class[b]
-            # pos-reg: for each gt, which anchor best overlaps with it
-            _d_yxyx = label_box[b] - self.view_anchors_yxyx[gt_iou_max_idx] # (N, 4)
-            _anchors_hw = self.view_anchors_hw[gt_iou_max_idx]
-            _d_yxyx[:, :2] = _d_yxyx[:, :2] / _anchors_hw / 0.2
-            _d_yxyx[:, 2:] = _d_yxyx[:, 2:] / _anchors_hw / 0.2
-            targets_reg_b[gt_iou_max_idx] = _d_yxyx
+            # # pos: for each gt, which anchor best overlaps with it
+            # gt_iou_max, gt_iou_max_idx = torch.max(iou, dim=0) # (N), (N)
+            # targets_cls_b[gt_iou_max_idx] = label_class[b]
+            # # pos-reg: for each gt, which anchor best overlaps with it
+            # _d_yxyx = label_box[b] - self.view_anchors_yxyx[gt_iou_max_idx] # (N, 4)
+            # _anchors_hw = self.view_anchors_hw[gt_iou_max_idx]
+            # _d_yxyx[:, :2] = _d_yxyx[:, :2] / _anchors_hw / 0.2
+            # _d_yxyx[:, 2:] = _d_yxyx[:, 2:] / _anchors_hw / 0.2
+            # targets_reg_b[gt_iou_max_idx] = _d_yxyx
             # append
             targets_cls.append(targets_cls_b)
             targets_reg.append(targets_reg_b)

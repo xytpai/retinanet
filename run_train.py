@@ -51,30 +51,31 @@ opt = torch.optim.SGD(net.parameters(), lr=lr,
 
 
 # Run warmup
-WARM_UP_ITERS = 500
-WARM_UP_FACTOR = 1.0 / 3.0
-if cfg['freeze_bn']:
-    net.module.backbone.freeze_bn()
-for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
-    alpha = float(i) / WARM_UP_ITERS
-    warmup_factor = WARM_UP_FACTOR * (1.0 - alpha) + alpha
-    for param_group in opt.param_groups:
-        param_group['lr'] = lr * warmup_factor
-    time_start = time.time()
-    opt.zero_grad()
-    temp = net(img, label, bbox)
-    loss = get_loss(temp)
-    loss.backward()
-    clip = cfg['grad_clip']
-    torch.nn.utils.clip_grad_norm_(net.parameters(), clip)
-    opt.step()
-    maxmem = int(torch.cuda.max_memory_allocated(device=cfg['device'][0]) / 1024 / 1024)
-    time_end = time.time()
-    totaltime = int((time_end - time_start) * 1000)
-    print('warmup: step:%d/%d, lr:%f, loss:%f, maxMem:%dMB, time:%dms' % \
-                (i, WARM_UP_ITERS, lr * warmup_factor, loss, maxmem, totaltime))
-    if i >= WARM_UP_ITERS:
-        break
+if not cfg['load']:
+    WARM_UP_ITERS = 500
+    WARM_UP_FACTOR = 1.0 / 3.0
+    if cfg['freeze_bn']:
+        net.module.backbone.freeze_bn()
+    for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
+        alpha = float(i) / WARM_UP_ITERS
+        warmup_factor = WARM_UP_FACTOR * (1.0 - alpha) + alpha
+        for param_group in opt.param_groups:
+            param_group['lr'] = lr * warmup_factor
+        time_start = time.time()
+        opt.zero_grad()
+        temp = net(img, label, bbox)
+        loss = get_loss(temp)
+        loss.backward()
+        clip = cfg['grad_clip']
+        torch.nn.utils.clip_grad_norm_(net.parameters(), clip)
+        opt.step()
+        maxmem = int(torch.cuda.max_memory_allocated(device=cfg['device'][0]) / 1024 / 1024)
+        time_end = time.time()
+        totaltime = int((time_end - time_start) * 1000)
+        print('warmup: step:%d/%d, lr:%f, loss:%f, maxMem:%dMB, time:%dms' % \
+                    (i, WARM_UP_ITERS, lr * warmup_factor, loss, maxmem, totaltime))
+        if i >= WARM_UP_ITERS:
+            break
 
 
 # Run epoch
