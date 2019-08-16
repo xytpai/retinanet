@@ -51,11 +51,6 @@ class Detector(nn.Module):
         self.conv_4 =nn.Conv2d(256, 256, kernel_size=3, padding=1)
         self.conv_3 =nn.Conv2d(256, 256, kernel_size=3, padding=1)
 
-        # reinit fpn =======================================================
-        for module in [self.conv_out6, self.conv_out7]:
-            nn.init.kaiming_uniform_(module.weight, a=1)
-            nn.init.constant_(module.bias, 0)
-        
         # head =======================================================
         self.conv_cls = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
@@ -96,6 +91,7 @@ class Detector(nn.Module):
             gen_anchors(self.a_hw, self.scales, self.view_size, self.first_stride)
         self.view_hwan = self._view_anchors_yxyx.shape[0]
         self.register_buffer('view_anchors_yxyx', self._view_anchors_yxyx)
+        self.register_buffer('view_anchors_yx', self._view_anchors_yxhw[:, :2])
         self.register_buffer('view_anchors_hw', self._view_anchors_yxhw[:, 2:])
 
 
@@ -104,9 +100,11 @@ class Detector(nn.Module):
                     mode='bilinear', align_corners=True) # input size must be odd
     
 
-    def forward(self, x, label_class=None, label_box=None):
+    def forward(self, x, loc, label_class=None, label_box=None):
         '''
         Param:
+        x:           FloatTensor(batch_num, 3, H, W)
+        loc:         FloatTensor(batch_num, 4)
         label_class: LongTensor(batch_num, N_max) or None
         label_box:   FloatTensor(batch_num, N_max, 4) or None
 
@@ -158,7 +156,7 @@ class Detector(nn.Module):
         reg_out = torch.cat(reg_out, dim=1)
         
         if (label_class is not None) and (label_box is not None):
-            targets_cls, targets_reg = self._encode(label_class, label_box) # (b, hwan), (b, hwan, 4)
+            targets_cls, targets_reg = self._encode(label_class, label_box, loc) # (b, hwan), (b, hwan, 4)
             mask_cls = targets_cls > -1 # (b, hwan)
             mask_reg = targets_cls > 0 # (b, hwan)
             num_pos = torch.sum(mask_reg, dim=1).clamp_(min=1) # (b)
@@ -173,14 +171,15 @@ class Detector(nn.Module):
                 loss.append((loss_cls_b + loss_reg_b) / float(num_pos[b])) 
             return torch.cat(loss, dim=0) # (b)
         else:
-            return self._decode(cls_out, reg_out)
+            return self._decode(cls_out, reg_out, loc)
 
 
-    def _encode(self, label_class, label_box):
+    def _encode(self, label_class, label_box, loc):
         '''
         Param:
         label_class: LongTensor(batch_num, N_max)
         label_box:   FloatTensor(batch_num, N_max, 4)
+        loc:         FloatTensor(batch_num, 4)
 
         Return:
         targets_cls: LongTensor(batch_num, hwan)
@@ -213,26 +212,23 @@ class Detector(nn.Module):
             d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
             d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
             targets_reg_b[anchors_pos_mask] = d_yxyx
-            # # pos: for each gt, which anchor best overlaps with it
-            # gt_iou_max, gt_iou_max_idx = torch.max(iou, dim=0) # (N), (N)
-            # targets_cls_b[gt_iou_max_idx] = label_class[b]
-            # # pos-reg: for each gt, which anchor best overlaps with it
-            # _d_yxyx = label_box[b] - self.view_anchors_yxyx[gt_iou_max_idx] # (N, 4)
-            # _anchors_hw = self.view_anchors_hw[gt_iou_max_idx]
-            # _d_yxyx[:, :2] = _d_yxyx[:, :2] / _anchors_hw / 0.2
-            # _d_yxyx[:, 2:] = _d_yxyx[:, 2:] / _anchors_hw / 0.2
-            # targets_reg_b[gt_iou_max_idx] = _d_yxyx
+            # ignore
+            cd1 = self.view_anchors_yx - loc[b, :2]
+            cd2 = loc[b, 2:] - self.view_anchors_yx
+            mask = (cd1.min(dim=1)[0] < 0) | (cd2.min(dim=1)[0] < 0)
+            targets_cls_b[mask] = -1
             # append
             targets_cls.append(targets_cls_b)
             targets_reg.append(targets_reg_b)
         return torch.stack(targets_cls), torch.stack(targets_reg)
     
 
-    def _decode(self, cls_out, reg_out):
+    def _decode(self, cls_out, reg_out, loc):
         '''
         Param:
         cls_out: FloatTensor(batch_num, hwan, classes)
         reg_out: FloatTensor(batch_num, hwan, 4)
+        loc:     FloatTensor(batch_num, 4)
         
         Return:
         cls_i_preds: LongTensor(batch_num, topk)
@@ -241,14 +237,19 @@ class Detector(nn.Module):
         '''
         cls_p_preds, cls_i_preds = torch.max(cls_out.sigmoid(), dim=2)
         cls_i_preds = cls_i_preds + 1
-        # reg
         reg_preds = []
         for b in range(cls_out.shape[0]):
+            # box transform
             reg_dyxyx = reg_out[b]
             reg_dyxyx[:, :2] = reg_dyxyx[:, :2] * 0.2 * self.view_anchors_hw
             reg_dyxyx[:, 2:] = reg_dyxyx[:, 2:] * 0.2 * self.view_anchors_hw
             reg_yxyx = reg_dyxyx + self.view_anchors_yxyx
             reg_preds.append(reg_yxyx)
+            # ignore
+            cd1 = self.view_anchors_yx - loc[b, :2]
+            cd2 = loc[b, 2:] - self.view_anchors_yx
+            mask = (cd1.min(dim=1)[0] < 0) | (cd2.min(dim=1)[0] < 0)
+            cls_p_preds[b, mask] = 0
         reg_preds = torch.stack(reg_preds)
         # topk
         nms_maxnum = min(int(self.max_detections), int(cls_p_preds.shape[1]))
@@ -257,7 +258,12 @@ class Detector(nn.Module):
         for b in range(cls_out.shape[0]):
             _cls_i.append(cls_i_preds[b][select[b]]) # (topk)
             _cls_p.append(cls_p_preds[b][select[b]]) # (topk)
-            _reg.append(reg_preds[b][select[b]]) # (topk, 4)
+            reg_preds_b = reg_preds[b][select[b]] # (topk, 4)
+            reg_preds_b[:, 0].clamp_(min=float(loc[b, 0]))
+            reg_preds_b[:, 1].clamp_(min=float(loc[b, 1]))
+            reg_preds_b[:, 2].clamp_(max=float(loc[b, 2]))
+            reg_preds_b[:, 3].clamp_(max=float(loc[b, 3]))
+            _reg.append(reg_preds_b) # (topk, 4)
         return torch.stack(_cls_i), torch.stack(_cls_p), torch.stack(_reg)
 
 
@@ -267,7 +273,7 @@ def get_loss(temp):
 
 
 
-def get_pred(temp, nms_th, nms_iou, oh, ow):
+def get_pred(temp, nms_th, nms_iou):
     '''
     temp:
     cls_i_preds: LongTensor(batch_num, topk)
@@ -290,13 +296,7 @@ def get_pred(temp, nms_th, nms_iou, oh, ow):
         cls_p_preds_b = cls_p_preds_b[mask]
         reg_preds_b = reg_preds_b[mask]
         keep = box_nms(reg_preds_b, cls_p_preds_b, nms_iou)
-        cls_i_preds_b = cls_i_preds_b[keep]
-        cls_p_preds_b = cls_p_preds_b[keep]
-        reg_preds_b = reg_preds_b[keep]
-        reg_preds_b[:, :2] = reg_preds_b[:, :2].clamp_(min=0)
-        reg_preds_b[:, 2] = reg_preds_b[:, 2].clamp_(max=float(oh[b])-1)
-        reg_preds_b[:, 3] = reg_preds_b[:, 3].clamp_(max=float(ow[b])-1)
-        _cls_i_preds.append(cls_i_preds_b)
-        _cls_p_preds.append(cls_p_preds_b)
-        _reg_preds.append(reg_preds_b)
+        _cls_i_preds.append(cls_i_preds_b[keep])
+        _cls_p_preds.append(cls_p_preds_b[keep])
+        _reg_preds.append(reg_preds_b[keep])
     return _cls_i_preds, _cls_p_preds, _reg_preds
