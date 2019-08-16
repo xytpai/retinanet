@@ -56,14 +56,14 @@ if not cfg['load']:
     WARM_UP_FACTOR = 1.0 / 3.0
     if cfg['freeze_bn']:
         net.module.backbone.freeze_bn()
-    for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
+    for i, (img, bbox, label, loc, scale) in enumerate(loader_train):
         alpha = float(i) / WARM_UP_ITERS
         warmup_factor = WARM_UP_FACTOR * (1.0 - alpha) + alpha
         for param_group in opt.param_groups:
             param_group['lr'] = lr * warmup_factor
         time_start = time.time()
         opt.zero_grad()
-        temp = net(img, label, bbox)
+        temp = net(img, loc, label, bbox)
         loss = get_loss(temp)
         loss.backward()
         clip = cfg['grad_clip']
@@ -91,10 +91,10 @@ for epoch_num in cfg['epoch_num']: # 3 for example
             net.module.backbone.freeze_bn()
 
         # Train
-        for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_train):
+        for i, (img, bbox, label, loc, scale) in enumerate(loader_train):
             time_start = time.time()
             opt.zero_grad()
-            temp = net(img, label, bbox)
+            temp = net(img, loc, label, bbox)
             loss = get_loss(temp)
             loss.backward()
             clip = cfg['grad_clip']
@@ -115,10 +115,10 @@ for epoch_num in cfg['epoch_num']: # 3 for example
             pred_scores = []
             gt_bboxes = []
             gt_labels = []
-            for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_eval):
-                temp = net(img)
+            for i, (img, bbox, label, loc, scale) in enumerate(loader_eval):
+                temp = net(img, loc)
                 cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                        net.module.nms_th, net.module.nms_iou, oh, ow)
+                        net.module.nms_th, net.module.nms_iou)
                 for idx in range(len(cls_i_preds)):
                     cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
                     cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()

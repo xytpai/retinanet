@@ -44,10 +44,10 @@ with torch.no_grad():
     pred_scores = []
     gt_bboxes = []
     gt_labels = []
-    for i, (img, bbox, label, scale, oh, ow) in enumerate(loader_eval):
-        temp = net(img)
+    for i, (img, bbox, label, loc, scale) in enumerate(loader_eval):
+        temp = net(img, loc)
         cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.module.nms_th, net.module.nms_iou, oh, ow)
+                net.module.nms_th, net.module.nms_iou)
         for idx in range(len(cls_i_preds)):
             cls_i_preds[idx] = cls_i_preds[idx].cpu().detach().numpy()
             cls_p_preds[idx] = cls_p_preds[idx].cpu().detach().numpy()
