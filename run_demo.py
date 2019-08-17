@@ -5,6 +5,7 @@ import json
 from PIL import Image
 import api
 import torchvision.transforms as transforms
+from detector import Detector
 
 
 # Read train.json and set current GPU (for nms_cuda) and prepare the network

@@ -25,6 +25,5 @@
     "boxarea_th": 32,
     "grad_clip": 3,
     
-    "img_scale_min": 0.8,
-    "augmentation": false
+    "img_scale_min": 0.8
 }

@@ -3,6 +3,7 @@ import torch
 import json
 import api
 from utils_box.dataset import Dataset_CSV
+from detector import Detector
 
 
 # Read train.json and set current GPU (for nms_cuda)

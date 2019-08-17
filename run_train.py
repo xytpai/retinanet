@@ -4,6 +4,7 @@ import json
 import time
 import api
 from utils_box.dataset import Dataset_CSV
+from detector import Detector
 
 
 # Read train.json and set current GPU (for nms_cuda)
@@ -28,8 +29,7 @@ net.train()
 dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file'], 
     size=net.module.view_size, train=True, normalize=True, 
     boxarea_th = cfg['boxarea_th'], 
-    img_scale_min = cfg['img_scale_min'],
-    augmentation = cfg['augmentation'])
+    img_scale_min = cfg['img_scale_min'])
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
     size=net.module.view_size, train=False, normalize=True)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 

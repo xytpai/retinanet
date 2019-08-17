@@ -6,6 +6,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import os
 import api
+from detector import Detector
 
 
 # TODO: Set your coco_table_file, coco_anno_root and set_name
