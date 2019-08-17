@@ -37,6 +37,7 @@ class Trainer(object):
         '''
         train one epoch
         '''
+        lr = -1
         for i, (img, bbox, label, loc, scale) in enumerate(self.loader):
             batch_size = int(img.shape[0])
             time_start = time.time()
@@ -50,12 +51,13 @@ class Trainer(object):
             maxmem = int(torch.cuda.max_memory_allocated(device=self.device[0]) / 1024 / 1024)
             time_end = time.time()
             totaltime = int((time_end - time_start) * 1000)
-            print('total_step:%d: epoch:%d, step:%d/%d, loss:%f, maxMem:%dMB, time:%dms' % \
-                (self.step, self.epoch, i*batch_size, len(self.dataset), loss, maxmem, totaltime))
+            print('total_step:%d: epoch:%d, step:%d/%d, loss:%f, maxMem:%dMB, time:%dms, lr:%f' % \
+                (self.step, self.epoch, i*batch_size, len(self.dataset), loss, maxmem, totaltime, lr))
             self.step += 1
             if self.lr_func is not None:
+                lr = self.lr_func(self.step)
                 for param_group in self.opt.param_groups:
-                    param_group['lr'] = self.lr_func(self.step)
+                    param_group['lr'] = lr
         self.epoch += 1
 
 
