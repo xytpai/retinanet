@@ -156,7 +156,7 @@ class COCOEvaluator(object):
                 if reg_preds.shape[0] > 0:
                     ymin, xmin, ymax, xmax = reg_preds.split([1, 1, 1, 1], dim=1)
                     h, w = ymax - ymin, xmax - xmin 
-                    reg_preds = torch.cat([xmin - loc[0,0].cpu(), ymin - loc[0,1].cpu(), w, h], dim=1)
+                    reg_preds = torch.cat([xmin - loc[0, 1].cpu(), ymin - loc[0, 0].cpu(), w, h], dim=1)
                     reg_preds = reg_preds / float(scale)
                     for box_id in range(reg_preds.shape[0]):
                         score = float(cls_p_preds[box_id])
