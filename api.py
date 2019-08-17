@@ -43,7 +43,8 @@ class Trainer(object):
                 lr = self.lr_func(self.step)
                 for param_group in self.opt.param_groups:
                     param_group['lr'] = lr
-            batch_size = int(img.shape[0])
+            if i == 0:
+                batch_size = int(img.shape[0])
             time_start = time.time()
             self.opt.zero_grad()
             temp = self.net(img, loc, label, bbox)
