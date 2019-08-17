@@ -25,8 +25,5 @@
     "grad_clip": 3,
     
     "img_scale_min": 0.8,
-    "augmentation": false,
-    "crop_scale_min": 0.2,
-    "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.8
+    "augmentation": false
 }

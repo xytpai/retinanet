@@ -3,9 +3,8 @@ import numpy as np
 import os
 import json
 from PIL import Image
+import api
 import torchvision.transforms as transforms
-from utils_box.dataset import show_bbox, corner_fix
-from detector import Detector, get_loss, get_pred
 
 
 # Read train.json and set current GPU (for nms_cuda) and prepare the network
@@ -32,28 +31,18 @@ for line in lines:
     LABEL_NAMES.append(line.strip())
 
 
-# Run
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))])
+# Prepare API structure
+inferencer = api.Inferencer(net)
 
+
+# Run
 for filename in os.listdir('images/'):
     if filename.endswith('jpg'):
         img = Image.open(os.path.join('images/', filename))
         if img.mode != 'RGB':
             img = img.convert('RGB')
-        _boxes = torch.zeros(0,4)
-        img_cpy = img.copy()
-        img_cpy = transforms.ToTensor()(img_cpy)
-        img, _boxes, scale, oh, ow = corner_fix(img, _boxes, net.view_size)
-        oh, ow = torch.Tensor([oh]), torch.Tensor([ow])
-        img = transform(img)
-        img = img.view(1, img.shape[0], img.shape[1], img.shape[2]).cuda()
-        with torch.no_grad():
-            temp = net(img)
-            cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.nms_th, net.nms_iou, oh, ow)
-            name = 'images/pred_'+filename.split('.')[0]+'.bmp'
-            reg_preds[0] /= scale
-            show_bbox(img_cpy, reg_preds[0].cpu(), cls_i_preds[0].cpu(), LABEL_NAMES, name)
-
+        img = transforms.ToTensor()(img)
+        img_cpy = img.clone()
+        cls_i_preds, cls_p_preds, reg_preds = inferencer.pred(img)
+        name = 'images/pred_'+filename.split('.')[0]+'.bmp'
+        show_bbox(img_cpy, reg_preds.cpu(), cls_i_preds.cpu(), LABEL_NAMES, name)

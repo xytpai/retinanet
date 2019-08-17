@@ -10,9 +10,8 @@ import torchvision.transforms as transforms
 
 class Dataset_CSV(data.Dataset):
     def __init__(self, root, list_file, name_file, 
-                    size=641, train=True, normalize=True, boxarea_th=25,
-                    img_scale_min=0.2, crop_scale_min=0.1, aspect_ratio=(3./4, 4./3), remain_min=0.8,
-                    augmentation=True):
+                    size=1025, train=True, normalize=True, boxarea_th=35,
+                    img_scale_min=0.8, augmentation=None):
         ''''
         Provide:
         self.fnames:      [fname1, fname2, fname3, ...] # image filename
@@ -25,7 +24,7 @@ class Dataset_CSV(data.Dataset):
         - list_file: img_name.jpg ymin1 xmin1 ymax1 xmax1 label1 ... /n
         - name_file: background /n class_name1 /n class_name2 /n ...
         - if not have object -> xxx.jpg 0 0 0 0 0
-        - remove box when area <= boxarea_th
+        - remove box when area < boxarea_th
         - label == 0 indecates background 
         '''
         self.root = root
@@ -34,9 +33,6 @@ class Dataset_CSV(data.Dataset):
         self.normalize = normalize
         self.boxarea_th = boxarea_th
         self.img_scale_min = img_scale_min
-        self.crop_scale_min = crop_scale_min
-        self.aspect_ratio = aspect_ratio
-        self.remain_min = remain_min
         self.augmentation = augmentation
         self.fnames = []
         self.boxes = []
@@ -65,6 +61,7 @@ class Dataset_CSV(data.Dataset):
             lines = f.readlines()
             for line in lines:
                 self.LABEL_NAMES.append(line.strip())
+        self.normalizer = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))
     
 
     def __len__(self):
@@ -89,8 +86,8 @@ class Dataset_CSV(data.Dataset):
             if random.random() < 0.5:
                 img, boxes = flip(img, boxes)
             # TODO: other augmentation (img, boxes)
-            if self.augmentation:
-                pass
+            if self.augmentation is not None:
+                img, boxes = self.augmentation(img, boxes)
             # standard procedure
             if random.random() < 0.5:
                 img, boxes, loc, scale = random_resize_fix(img, boxes, self.size, self.img_scale_min)
@@ -100,19 +97,19 @@ class Dataset_CSV(data.Dataset):
             img, boxes, loc, scale = center_fix(img, boxes, self.size)
         hw = boxes[:, 2:] - boxes[:, :2] # [N,2]
         area = hw[:, 0] * hw[:, 1]       # [N]
-        mask = area > self.boxarea_th
+        mask = area >= self.boxarea_th
         boxes = boxes[mask]
         labels = labels[mask]
         img = transforms.ToTensor()(img)
         if self.normalize:
-            img = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))(img)
+            img = self.normalizer(img)
         return img, boxes, labels, loc, scale
 
 
     def collate_fn(self, data):
         '''
         Return:
-        img     FloatTensor(batch_num, 3, size, size),
+        img     FloatTensor(batch_num, 3, size, size)
         boxes   FloatTensor(batch_num, N_max, 4)
         Labels  LongTensor(batch_num, N_max)
         loc     FloatTensor(batch_num, 4)
@@ -189,7 +186,7 @@ def random_resize_fix(img, boxes, size, img_scale_min):
 
 
 
-def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=True):
+def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=False):
     '''
     img:      FloatTensor(3, H, W)
     boxes:    FloatTensor(N, 4)
@@ -221,23 +218,18 @@ if __name__ == '__main__':
 
     #TODO: parameters
     train = True
-    size = 641
+    size = 1025
     boxarea_th = 32
     img_scale_min = 0.8
-    crop_scale_min = 0.2
-    aspect_ratio = [3./4, 4./3]
-    remain_min = 0.8
-    augmentation = False
+    augmentation = None
     batch_size = 8
     csv_root  = 'D:\\dataset\\coco17\\images'
-    csv_list  = '../data/coco_train2017.txt'
+    csv_list  = '../data/coco_val2017.txt'
     csv_name  = '../data/coco_name.txt'
     
     dataset = Dataset_CSV(csv_root, csv_list, csv_name, 
         size=size, train=train, normalize=False, boxarea_th=boxarea_th,
-        img_scale_min=img_scale_min, crop_scale_min=crop_scale_min, 
-        aspect_ratio=aspect_ratio, remain_min=remain_min, 
-        augmentation=augmentation)
+        img_scale_min=img_scale_min, augmentation=augmentation)
     dataloader = data.DataLoader(dataset, batch_size=batch_size, 
         shuffle=True, num_workers=0, collate_fn=dataset.collate_fn)
     for imgs, boxes, labels, locs, scales in dataloader:
