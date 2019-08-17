@@ -83,4 +83,4 @@ while True:
     if cfg['save']:
         torch.save(net.module.state_dict(),'net.pkl')
         np.save('log.npy', log)
-print('End run_train')
+print('Schedule finished!')
