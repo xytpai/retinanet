@@ -37,6 +37,7 @@ class Detector(nn.Module):
         self.nms_th = 0.05
         self.nms_iou = 0.5
         self.max_detections = 3000
+        self.balanced_fpn = False
         # ---------------------------
 
         # fpn =======================================================
@@ -132,6 +133,15 @@ class Detector(nn.Module):
 
         P6 = self.conv_out6(C5)
         P7 = self.conv_out7(self.relu(P6))
+
+        if self.balanced_fpn:
+            # kernel_size, stride, padding, dilation, False, False
+            P3 = F.max_pool2d(P3, 3, 2, 1, 1, False, False)
+            P5 = self.upsample(P5)
+            P4 = (P3 + P4 + P5) / 3.0
+            # kernel_size, stride, padding, False, False
+            P5 = F.avg_pool2d(P4, 3, 2, 1, False, False)
+            P3 = self.upsample(P4)
 
         pred_list = [P3, P4, P5, P6, P7]
         assert len(pred_list) == self.scales
