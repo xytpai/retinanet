@@ -52,7 +52,7 @@ class Trainer(object):
             time_end = time.time()
             totaltime = int((time_end - time_start) * 1000)
             print('total_step:%d: epoch:%d, step:%d/%d, loss:%f, maxMem:%dMB, time:%dms, lr:%f' % \
-                (self.step, self.epoch, i*batch_size, len(self.dataset), loss, maxmem, totaltime, lr))
+                (self.step, self.epoch, i*batch_size, len(self.dataset), round(loss,5), maxmem, totaltime, round(lr,5)))
             self.step += 1
             if self.lr_func is not None:
                 lr = self.lr_func(self.step)
