@@ -44,7 +44,6 @@ inferencer = api.COCOEvaluator(net, dataset_eval,
 
 # Eval
 inferencer.step_epoch()
-json.dump(results, open('coco_bbox_results.json', 'w'), indent=4)
 coco = COCO(os.path.join(coco_anno_root, 'annotations', 'instances_' + set_name + '.json'))
 coco_pred = coco.loadRes('coco_bbox_results.json')
 coco_eval = COCOeval(coco, coco_pred, 'bbox')

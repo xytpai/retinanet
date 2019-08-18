@@ -1,6 +1,7 @@
 import torch
 import numpy as np 
 import time
+import json
 import torchvision.transforms as transforms
 from utils_box.eval_csv import eval_detection
 from utils_box.dataset import center_fix
@@ -148,9 +149,9 @@ class COCOEvaluator(object):
                 img, bbox, label, loc, scale = self.dataset[i]
                 img = img.cuda().view(1, img.shape[0], img.shape[1], img.shape[2])
                 loc = loc.cuda().view(1, -1)
-                temp = net(img, loc)
+                temp = self.net(img, loc)
                 cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                        net.nms_th, net.nms_iou)
+                        self.net.nms_th, self.net.nms_iou)
                 cls_i_preds = cls_i_preds[0].cpu()
                 cls_p_preds = cls_p_preds[0].cpu()
                 reg_preds = reg_preds[0].cpu()
@@ -196,9 +197,9 @@ class Inferencer(object):
         img = img.cuda()
         loc = loc.view(1, -1).cuda()
         with torch.no_grad():
-            temp = net(img, loc)
+            temp = self.net(img, loc)
             cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
-                net.nms_th, net.nms_iou)
+                self.net.nms_th, self.net.nms_iou)
             reg_preds[0][:, 0] -= loc[0, 0]
             reg_preds[0][:, 1] -= loc[0, 1]
             reg_preds[0] /= scale
