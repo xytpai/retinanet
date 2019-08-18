@@ -216,16 +216,30 @@ def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=False):
 
 if __name__ == '__main__':
 
+    import augment
+    def aug_func_demo(img, boxes):
+        if random.random() < 0.9:
+            img, boxes = augment.colorJitter(img, boxes, 
+                            brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5)
+        if random.random() < 0.9:
+            img, boxes = augment.random_rotation(img, boxes, degree=5)
+        if random.random() < 0.9:
+            img, boxes = augment.random_crop_resize(img, boxes, size=512, 
+                            crop_scale_min=0.2, aspect_ratio=[3./4, 4./3], remain_min=0.1, 
+                            attempt_max=10)
+        return img, boxes
+
     #TODO: parameters
     train = True
     size = 1025
     boxarea_th = 32
     img_scale_min = 0.8
-    augmentation = None
+    augmentation = aug_func_demo
     batch_size = 8
     csv_root  = 'D:\\dataset\\coco17\\images'
     csv_list  = '../data/coco_val2017.txt'
     csv_name  = '../data/coco_name.txt'
+
     
     dataset = Dataset_CSV(csv_root, csv_list, csv_name, 
         size=size, train=train, normalize=False, boxarea_th=boxarea_th,
