@@ -84,7 +84,8 @@ class Evaluator(object):
             self.net.eval()
             pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels = [], [], [], [], []
             for i, (img, bbox, label, loc, scale) in enumerate(self.loader):
-                batch_size = int(img.shape[0])
+                if i == 0:
+                    batch_size = int(img.shape[0])
                 temp = self.net(img, loc)
                 cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
                         self.net.module.nms_th, self.net.module.nms_iou) # DataParallel
