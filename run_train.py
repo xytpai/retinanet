@@ -5,6 +5,8 @@ import time
 import api
 from utils_box.dataset import Dataset_CSV
 from detector import Detector
+import utils_box.augment as augment
+import random
 
 
 # Read train.json and set current GPU (for nms_cuda)
@@ -25,11 +27,29 @@ net = net.cuda(cfg['device'][0])
 net.train()
 
 
+# TODO: Define augment
+def aug_func(img, boxes):
+    if random.random() < 0.3:
+        img, boxes = augment.colorJitter(img, boxes, 
+                        brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)
+    if random.random() < 0.5:
+        img, boxes = augment.random_rotation(img, boxes, degree=5)
+    if random.random() < 0.5:
+        img, boxes = augment.random_crop_resize(img, boxes, size=512, 
+                        crop_scale_min=0.2, aspect_ratio=[3./4, 4./3], remain_min=0.7, 
+                        attempt_max=10)
+    return img, boxes
+if cfg['augmentation']:
+    augmentation = aug_func
+else:
+    augmentation = None
+
+
 # Get train/eval dataset and dataloader
 dataset_train = Dataset_CSV(cfg['root_train'], cfg['list_train'], cfg['name_file'], 
     size=net.module.view_size, train=True, normalize=True, 
     boxarea_th = cfg['boxarea_th'], 
-    img_scale_min = cfg['img_scale_min'])
+    img_scale_min = cfg['img_scale_min'], augmentation=augmentation)
 dataset_eval = Dataset_CSV(cfg['root_eval'], cfg['list_eval'], cfg['name_file'], 
     size=net.module.view_size, train=False, normalize=True)
 loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=cfg['nbatch_train'], 
