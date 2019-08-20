@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F 
 from utils_box.anchors import gen_anchors, box_overlap
 from libs.sigmoid_focal_loss import sigmoid_focal_loss
+from libs.smooth_l1_loss import smooth_l1_loss
 from libs.nms import box_nms 
-from libs.smooth_l1_loss import SmoothL1Loss
 # TODO: choose backbone
 from backbone import resnet50 as backbone
 
@@ -39,7 +39,6 @@ class Detector(nn.Module):
         self.nms_iou = 0.5
         self.max_detections = 3000
         self.balanced_fpn = False
-        self.box_criterion = SmoothL1Loss(beta=0.11)
         # ---------------------------
 
         # fpn =======================================================
@@ -179,7 +178,7 @@ class Detector(nn.Module):
                 targets_cls_b = targets_cls[b][mask_cls[b]] # (S+-)
                 targets_reg_b = targets_reg[b][mask_reg[b]] # # (S+, 4)
                 loss_cls_b = sigmoid_focal_loss(cls_out_b, targets_cls_b, 2.0, 0.25).sum().view(1)
-                loss_reg_b = self.box_criterion(reg_out_b, targets_reg_b).sum().view(1)
+                loss_reg_b = smooth_l1_loss(reg_out_b, targets_reg_b, 0.11).sum().view(1)
                 loss.append((loss_cls_b + loss_reg_b) / float(num_pos[b])) 
             return torch.cat(loss, dim=0) # (b)
         else:
