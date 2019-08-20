@@ -2,9 +2,10 @@ import math
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-from utils_box.anchors import gen_anchors, box_iou
+from utils_box.anchors import gen_anchors, box_overlap
 from libs.sigmoid_focal_loss import sigmoid_focal_loss
 from libs.nms import box_nms 
+from libs.smooth_l1_loss import SmoothL1Loss
 # TODO: choose backbone
 from backbone import resnet50 as backbone
 
@@ -38,6 +39,7 @@ class Detector(nn.Module):
         self.nms_iou = 0.5
         self.max_detections = 3000
         self.balanced_fpn = False
+        self.box_criterion = SmoothL1Loss(beta=0.11)
         # ---------------------------
 
         # fpn =======================================================
@@ -169,7 +171,7 @@ class Detector(nn.Module):
             targets_cls, targets_reg = self._encode(label_class, label_box, loc) # (b, hwan), (b, hwan, 4)
             mask_cls = targets_cls > -1 # (b, hwan)
             mask_reg = targets_cls > 0 # (b, hwan)
-            num_pos = torch.sum(mask_reg, dim=1).clamp_(min=1) # (b)
+            num_pos = torch.sum(mask_reg, dim=1).clamp_(min=self.scales) # (b)
             loss = []
             for b in range(targets_cls.shape[0]):
                 cls_out_b = cls_out[b][mask_cls[b]] # (S+-, classes)
@@ -177,7 +179,7 @@ class Detector(nn.Module):
                 targets_cls_b = targets_cls[b][mask_cls[b]] # (S+-)
                 targets_reg_b = targets_reg[b][mask_reg[b]] # # (S+, 4)
                 loss_cls_b = sigmoid_focal_loss(cls_out_b, targets_cls_b, 2.0, 0.25).sum().view(1)
-                loss_reg_b = F.smooth_l1_loss(reg_out_b, targets_reg_b, reduction='sum').view(1)
+                loss_reg_b = self.box_criterion(reg_out_b, targets_reg_b).sum().view(1)
                 loss.append((loss_cls_b + loss_reg_b) / float(num_pos[b])) 
             return torch.cat(loss, dim=0) # (b)
         else:
@@ -201,7 +203,7 @@ class Detector(nn.Module):
                     dtype=torch.long, device=label_class.device)
             targets_reg_b = torch.zeros(self.view_hwan, 4, 
                     dtype=torch.float, device=label_class.device)
-            iou = box_iou(self.view_anchors_yxyx, label_box[b]) # (hwan, N)
+            iou = box_overlap(self.view_anchors_yxyx, label_box[b]) # (hwan, N)
             if (iou.shape[1] <= 0):
                 targets_cls_b[:] = 0
                 targets_cls.append(targets_cls_b)

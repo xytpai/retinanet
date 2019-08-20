@@ -24,6 +24,18 @@ def box_iou(box1, box2):
 
 
 
+def box_overlap(anchors, boxes):
+    boxes = torch.cat([boxes[:, :2], boxes[:, :2] + boxes[:, 2:] - 1], 1)
+    xy1 = torch.max(anchors[:, None, :2], boxes[:, :2])
+    xy2 = torch.min(anchors[:, None, 2:], boxes[:, 2:])
+    inter = torch.prod((xy2 - xy1 + 1).clamp(0), 2)
+    boxes_area = torch.prod(boxes[:, 2:] - boxes[:, :2] + 1, 1)
+    anchors_area = torch.prod(anchors[:, 2:] - anchors[:, :2] + 1, 1)
+    overlap = inter / (anchors_area[:, None] + boxes_area - inter)
+    return overlap
+
+
+
 def gen_anchors(a_hw, scales, img_size, first_stride):
     '''
     Return:
