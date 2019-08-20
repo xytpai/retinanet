@@ -23,7 +23,7 @@
     "weight_decay": 0.0001,
 
     "boxarea_th": 32,
-    "grad_clip": 3,
+    "grad_clip": 35,
     
     "img_scale_min": 0.8,
     "augmentation": false
