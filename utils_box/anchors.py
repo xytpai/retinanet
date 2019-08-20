@@ -15,24 +15,12 @@ def box_iou(box1, box2):
     '''
     tl = torch.max(box1[:,None,:2], box2[:,:2])  # [n,m,2]
     br = torch.min(box1[:,None,2:], box2[:,2:])  # [n,m,2]
-    hw = (br-tl).clamp(min=0)  # [n,m,2]
+    hw = (br-tl+1).clamp(min=0)  # [n,m,2]
     inter = hw[:,:,0] * hw[:,:,1]  # [n,m]
     area1 = (box1[:,2]-box1[:,0]) * (box1[:,3]-box1[:,1])  # [n,]
     area2 = (box2[:,2]-box2[:,0]) * (box2[:,3]-box2[:,1])  # [m,]
     iou = inter / (area1[:,None] + area2 - inter)
     return iou
-
-
-
-def box_overlap(anchors, boxes):
-    boxes = torch.cat([boxes[:, :2], boxes[:, :2] + boxes[:, 2:] - 1], 1)
-    xy1 = torch.max(anchors[:, None, :2], boxes[:, :2])
-    xy2 = torch.min(anchors[:, None, 2:], boxes[:, 2:])
-    inter = torch.prod((xy2 - xy1 + 1).clamp(0), 2)
-    boxes_area = torch.prod(boxes[:, 2:] - boxes[:, :2] + 1, 1)
-    anchors_area = torch.prod(anchors[:, 2:] - anchors[:, :2] + 1, 1)
-    overlap = inter / (anchors_area[:, None] + boxes_area - inter)
-    return overlap
 
 
 
@@ -91,51 +79,51 @@ def gen_anchors(a_hw, scales, img_size, first_stride):
 
 
 
-if __name__ == '__main__':
-    A_HW = [
-        [14.0, 14.0],
-        [12.8, 19.6],
-        # [39.6, 19.8]
-    ]
-    SCALES        = 3
-    IMG_SIZE    = (80,300)
-    FIRST_STRIDE  = 64
-    ANCHORS_YXYX, ANCHORS_YXHW = gen_anchors(A_HW, SCALES, IMG_SIZE, FIRST_STRIDE)
-    print(ANCHORS_YXYX.shape)
-    print(ANCHORS_YXHW.shape)
-    img_1 = torch.zeros(IMG_SIZE[0], IMG_SIZE[1])
-    img_2 = torch.zeros(IMG_SIZE[0], IMG_SIZE[1])
+# if __name__ == '__main__':
+#     A_HW = [
+#         [14.0, 14.0],
+#         [12.8, 19.6],
+#         # [39.6, 19.8]
+#     ]
+#     SCALES        = 3
+#     IMG_SIZE    = (80,300)
+#     FIRST_STRIDE  = 64
+#     ANCHORS_YXYX, ANCHORS_YXHW = gen_anchors(A_HW, SCALES, IMG_SIZE, FIRST_STRIDE)
+#     print(ANCHORS_YXYX.shape)
+#     print(ANCHORS_YXHW.shape)
+#     img_1 = torch.zeros(IMG_SIZE[0], IMG_SIZE[1])
+#     img_2 = torch.zeros(IMG_SIZE[0], IMG_SIZE[1])
 
-    for n in range(ANCHORS_YXYX.shape[0]):
-        ymin, xmin, ymax, xmax = ANCHORS_YXYX[n]
-        y, x, h, w = ANCHORS_YXHW[n]
+#     for n in range(ANCHORS_YXYX.shape[0]):
+#         ymin, xmin, ymax, xmax = ANCHORS_YXYX[n]
+#         y, x, h, w = ANCHORS_YXHW[n]
 
-        ymin = torch.clamp(ymin, min=0, max=IMG_SIZE[0]-1)
-        xmin = torch.clamp(xmin, min=0, max=IMG_SIZE[1]-1)
-        ymax = torch.clamp(ymax, min=0, max=IMG_SIZE[0]-1)
-        xmax = torch.clamp(xmax, min=0, max=IMG_SIZE[1]-1)
-        ymin, xmin, ymax, xmax = int(ymin), int(xmin), int(ymax), int(xmax) 
-        img_1[ymin, xmin:xmax] = 1.0
-        img_1[ymax, xmin:xmax] = 1.0
-        img_1[ymin:ymax, xmin] = 1.0
-        img_1[ymin:ymax, xmax] = 1.0
+#         ymin = torch.clamp(ymin, min=0, max=IMG_SIZE[0]-1)
+#         xmin = torch.clamp(xmin, min=0, max=IMG_SIZE[1]-1)
+#         ymax = torch.clamp(ymax, min=0, max=IMG_SIZE[0]-1)
+#         xmax = torch.clamp(xmax, min=0, max=IMG_SIZE[1]-1)
+#         ymin, xmin, ymax, xmax = int(ymin), int(xmin), int(ymax), int(xmax) 
+#         img_1[ymin, xmin:xmax] = 1.0
+#         img_1[ymax, xmin:xmax] = 1.0
+#         img_1[ymin:ymax, xmin] = 1.0
+#         img_1[ymin:ymax, xmax] = 1.0
 
-        _ymin = y - h/2.0
-        _xmin = x - w/2.0
-        _ymax = y + h/2.0
-        _xmax = x + w/2.0
-        _ymin = torch.clamp(_ymin, min=0, max=IMG_SIZE[0]-1)
-        _xmin = torch.clamp(_xmin, min=0, max=IMG_SIZE[1]-1)
-        _ymax = torch.clamp(_ymax, min=0, max=IMG_SIZE[0]-1)
-        _xmax = torch.clamp(_xmax, min=0, max=IMG_SIZE[1]-1)
-        _ymin, _xmin, _ymax, _xmax = int(_ymin), int(_xmin), int(_ymax), int(_xmax) 
-        img_2[_ymin, _xmin:_xmax] = 1.0
-        img_2[_ymax, _xmin:_xmax] = 1.0
-        img_2[_ymin:_ymax, _xmin] = 1.0
-        img_2[_ymin:_ymax, _xmax] = 1.0
+#         _ymin = y - h/2.0
+#         _xmin = x - w/2.0
+#         _ymax = y + h/2.0
+#         _xmax = x + w/2.0
+#         _ymin = torch.clamp(_ymin, min=0, max=IMG_SIZE[0]-1)
+#         _xmin = torch.clamp(_xmin, min=0, max=IMG_SIZE[1]-1)
+#         _ymax = torch.clamp(_ymax, min=0, max=IMG_SIZE[0]-1)
+#         _xmax = torch.clamp(_xmax, min=0, max=IMG_SIZE[1]-1)
+#         _ymin, _xmin, _ymax, _xmax = int(_ymin), int(_xmin), int(_ymax), int(_xmax) 
+#         img_2[_ymin, _xmin:_xmax] = 1.0
+#         img_2[_ymax, _xmin:_xmax] = 1.0
+#         img_2[_ymin:_ymax, _xmin] = 1.0
+#         img_2[_ymin:_ymax, _xmax] = 1.0
 
-    plt.subplot(1,2,1)
-    plt.imshow(img_1.numpy())
-    plt.subplot(1,2,2)
-    plt.imshow(img_2.numpy())
-    plt.show()
+#     plt.subplot(1,2,1)
+#     plt.imshow(img_1.numpy())
+#     plt.subplot(1,2,2)
+#     plt.imshow(img_2.numpy())
+#     plt.show()

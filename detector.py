@@ -2,7 +2,7 @@ import math
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-from utils_box.anchors import gen_anchors, box_overlap
+from utils_box.anchors import gen_anchors, box_iou
 from libs.sigmoid_focal_loss import sigmoid_focal_loss
 from libs.smooth_l1_loss import smooth_l1_loss
 from libs.nms import box_nms 
@@ -202,7 +202,7 @@ class Detector(nn.Module):
                     dtype=torch.long, device=label_class.device)
             targets_reg_b = torch.zeros(self.view_hwan, 4, 
                     dtype=torch.float, device=label_class.device)
-            iou = box_overlap(self.view_anchors_yxyx, label_box[b]) # (hwan, N)
+            iou = box_iou(self.view_anchors_yxyx, label_box[b]) # (hwan, N)
             if (iou.shape[1] <= 0):
                 targets_cls_b[:] = 0
                 targets_cls.append(targets_cls_b)
