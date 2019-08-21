@@ -200,9 +200,10 @@ def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=False):
         lb = int(labels[box_id])
         if lb > 0:
             box = boxes[box_id]
-            strlen = len(NAME_TAB[lb])
-            drawObj.rectangle((box[1],box[0],box[1]+strlen*6,box[0]+12), fill='blue')
-            drawObj.text((box[1],box[0]), NAME_TAB[lb])
+            if NAME_TAB is not None:
+                strlen = len(NAME_TAB[lb])
+                drawObj.rectangle((box[1],box[0],box[1]+strlen*6,box[0]+12), fill='blue')
+                drawObj.text((box[1],box[0]), NAME_TAB[lb])
             drawObj.rectangle((box[1],box[0],box[3],box[2]), outline='red')
     if file_name is not None:
         img.save(file_name)
@@ -234,7 +235,7 @@ if __name__ == '__main__':
     size = 1025
     boxarea_th = 32
     img_scale_min = 0.8
-    augmentation = aug_func_demo
+    augmentation = None
     batch_size = 8
     csv_root  = 'D:\\dataset\\coco17\\images'
     csv_list  = '../data/coco_val2017.txt'
@@ -255,6 +256,9 @@ if __name__ == '__main__':
         for i in range(len(boxes)):
             print(i, ': ', boxes[i].shape, labels[i].shape, locs[i], scales[i])
         # idx = int(input('idx:'))
-        idx = 0
+        idx = 3
+        print(labels[idx])
+        print(boxes[idx][labels[idx]>0])
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
+        # show_bbox(imgs[idx], boxes[idx], labels[idx], None)
         break
