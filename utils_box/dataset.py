@@ -81,6 +81,9 @@ class Dataset_CSV(data.Dataset):
         if img.mode != 'RGB':
             img = img.convert('RGB')
         boxes = self.boxes[idx].clone()
+        boxes[:, :2].clamp_(min=1)
+        boxes[:, 2].clamp_(max=float(img.size[1])-1)
+        boxes[:, 3].clamp_(max=float(img.size[0])-1)
         labels = self.labels[idx].clone()
         if self.train:
             if random.random() < 0.5:
