@@ -161,9 +161,11 @@ class ResNet(nn.Module):
                 layer.eval()
     
     def _freeze_stages(self):
-        self.bn1.eval()
         for m in [self.conv1, self.bn1]:
             for param in m.parameters():
+                param.requires_grad = False
+        for m in self.layer1:
+             for param in m.parameters():
                 param.requires_grad = False
 
 
