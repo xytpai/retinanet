@@ -32,7 +32,7 @@ class Detector(nn.Module):
         ]
         self.scales = 5
         self.first_stride = 8
-        self.view_size = 1281
+        self.view_size = 1025
         self.iou_th = (0.4, 0.5)
         self.classes = 80
         self.nms_th = 0.05
