@@ -165,7 +165,7 @@ class ResNet(nn.Module):
             for param in m.parameters():
                 param.requires_grad = False
         for m in self.layer1:
-             for param in m.parameters():
+            for param in m.parameters():
                 param.requires_grad = False
 
 
