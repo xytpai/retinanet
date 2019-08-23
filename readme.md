@@ -5,7 +5,7 @@ Focal Loss for Dense Object Detection.
 
 https://arxiv.org/abs/1708.02002
 
-This repo achieves **35.5%** mAP at nearly 800px resolution with a Resnet-50 backbone. 
+This repo achieves **35.5%** mAP at nearly 700px resolution with a Resnet-50 backbone. 
 
 ![](images/pred_demo.bmp)
 
@@ -17,8 +17,8 @@ First, configure *train.json* file, add your root.
 
 ```json
 {
-    "root_train": "/home1/xyt/dataset/VOC0712_trainval/JPEGImages",
-    "root_eval": "/home1/xyt/dataset/VOCdevkit/VOC2007/JPEGImages",
+    "root_train": "/home/xyt/dataset/VOC0712_trainval/JPEGImages",
+    "root_eval": "/home/xyt/dataset/VOCdevkit/VOC2007/JPEGImages",
     "list_train": "data/voc_trainval.txt",
     "list_eval": "data/voc_test.txt",
     "name_file": "data/voc_name.txt",
@@ -27,26 +27,25 @@ First, configure *train.json* file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [20,10],
+    "freeze_stages": true,
+    "epoches": 30,
 
-    "nbatch_train": 21,
-    "nbatch_eval": 21,
-    "device": [1,2,3],
-    "num_workers": 7,
-    
-    "lr": 0.01,
-    "lr_decay": 0.1,
+    "nbatch_train": 28,
+    "nbatch_eval": 28,
+    "device": [0,1,2,3],
+    "num_workers": 14,
+
+    "lr_base": 0.01,
+    "lr_gamma": 0.1,
+    "lr_schedule": [16000, 22000],
     "momentum": 0.9,
     "weight_decay": 0.0001,
 
-    "boxarea_th": 16,
-    "grad_clip": 5,
-    
-    "augmentation": true,
+    "boxarea_th": 32,
+    "grad_clip": 3,
+
     "img_scale_min": 0.6,
-    "crop_scale_min": 0.4,
-    "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.8
+    "augmentation": false
 }
 ```
 
@@ -56,33 +55,32 @@ Then, configure some parameters in *detector.py* file.
 # TODO: choose backbone
 from backbone import resnet50 as backbone
 # TODO: configure Detector
-self.train_size = 641
-self.eval_size = 641
+self.view_size = 641
 self.classes = 20   # TODO: total 20 classes exclude background
 ```
 
 In my experiment, only 30 epochs were performed. Better results can be achieved if it takes longer.
-run train to get results. It takes about 5 hours with 3x Titan-Xp. 
-run analyze and got mAP@.5: **79.5%**
+run train to get results. It takes about 5 hours with 4x Titan-Xp. 
+run analyze and got mAP@.5: **78.3%**
 
 ```python
 map_mean
-[0.0247 0.1067 0.1873 0.2904 0.3505 0.3594 0.3623 0.3557 0.4027 0.426
- 0.4014 0.431  0.3951 0.4495 0.4337 0.442  0.4371 0.4377 0.4598 0.4468
- 0.5208 0.5285 0.5298 0.534  0.5378 0.5334 0.5371 0.5396 0.5384 0.5399]
+[0.0279 0.1072 0.2366 0.2952 0.3205 0.3607 0.3728 0.397  0.4291 0.4273
+ 0.4397 0.4345 0.4677 0.479  0.4766 0.4698 0.4806 0.4749 0.495  0.4937
+ 0.5388 0.544  0.5518 0.5504 0.5492 0.5497 0.5511 0.5526 0.5526 0.5533]
 map_50
-[0.0569 0.2312 0.359  0.5032 0.6045 0.6036 0.599  0.5976 0.6605 0.6877
- 0.6452 0.695  0.6456 0.7122 0.6914 0.6967 0.6851 0.6949 0.7112 0.7065
- 0.7782 0.7845 0.7859 0.7894 0.7932 0.7899 0.7919 0.7934 0.7947 0.796 ]
+[0.0607 0.2096 0.4047 0.5043 0.5375 0.5816 0.5873 0.6389 0.6677 0.666
+ 0.6751 0.6726 0.7056 0.7249 0.7125 0.7088 0.7181 0.7091 0.7333 0.7277
+ 0.7715 0.7772 0.7831 0.7804 0.7787 0.7799 0.7824 0.783  0.7834 0.783 ]
 map_75
-[0.0187 0.0875 0.1804 0.3028 0.3625 0.3721 0.3789 0.3687 0.426  0.4582
- 0.4274 0.4619 0.4205 0.4879 0.4653 0.4788 0.4742 0.4709 0.5015 0.4896
- 0.5735 0.5829 0.5853 0.5913 0.5954 0.588  0.5935 0.5975 0.5954 0.5953]
+[0.0226 0.0976 0.243  0.2976 0.3285 0.3773 0.3893 0.4223 0.4542 0.4495
+ 0.472  0.4589 0.4903 0.5113 0.5105 0.4983 0.5154 0.5072 0.5351 0.5297
+ 0.5761 0.5842 0.5961 0.593  0.5936 0.5936 0.5919 0.5942 0.5938 0.5942]
 ```
 
 
 
-## 2. COCO (standard)
+## 2. COCO (1x)
 
 First, configure train.json file, add your root. 
 
@@ -98,77 +96,75 @@ First, configure train.json file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoch_num": [9,3,2],
+    "freeze_stages": true,
+    "epoches": 12,
 
     "nbatch_train": 16,
     "nbatch_eval": 16,
     "device": [1,2,3,5,6,7,8,9],
     "num_workers": 16,
-    
-    "lr": 0.01,
-    "lr_decay": 0.1,
+
+    "lr_base": 0.01,
+    "lr_gamma": 0.1,
+    "lr_schedule": [60000, 80000],
     "momentum": 0.9,
     "weight_decay": 0.0001,
 
-    "boxarea_th": 16,
-    "grad_clip": 5,
-    
-    "augmentation": false,
-    "img_scale_min": 0.6,
-    "crop_scale_min": 0.4,
-    "aspect_ratio": [0.750, 1.333],
-    "remain_min": 0.8
+    "boxarea_th": 32,
+    "grad_clip": 3,
+
+    "img_scale_min": 0.8,
+    "augmentation": false
 }
 ```
 
 Then, configure some parameters in *detector.py* file.
 
 ```python
+self.view_size = 1025
 self.classes = 80   # TODO: total 80 classes exclude background
-self.train_size = 1025
-self.eval_size = 1025
 ```
 
 It takes about 21 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
 
 ```python
 map_mean
-[0.1248 0.1764 0.1948 0.2136 0.2331 0.2456 0.254  0.2457 0.2561 0.3139
- 0.3185 0.3196 0.3225 0.3224]
+[0.1094 0.1786 0.1961 0.2203 0.2306 0.2524 0.2529 0.2624 0.3138 0.3196
+ 0.3273 0.3281]
 map_50
-[0.2168 0.2968 0.319  0.3452 0.3729 0.3891 0.4021 0.3941 0.4125 0.4815
- 0.4863 0.4879 0.4922 0.4924]
+[0.1859 0.2873 0.3091 0.3417 0.362  0.3901 0.3866 0.4077 0.4682 0.4769
+ 0.4858 0.4868]
 map_75
-[0.1277 0.1832 0.2077 0.2286 0.2465 0.2631 0.2734 0.2608 0.272  0.3372
- 0.3419 0.3438 0.3457 0.3448]
+[0.1115 0.1865 0.2078 0.234  0.243  0.2671 0.2683 0.2775 0.3347 0.338
+ 0.3494 0.3494]
 ```
 
-Run cocoeval and got mAP: **32.5%**
+Run cocoeval and got mAP: **33.1%**
 
 ```python
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.325
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.497
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.349
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.154
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.331
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.491
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.352
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.174
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.361
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.438
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.274
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.425
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.453
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.247
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.500
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.581
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.437
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.277
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.431
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.459
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.271
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.499
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.580
 ```
 
 
 
-## 3. COCO (data augmentation, longer time)
+## 3. COCO (2x)
 
 Like 2 in *train.json* modify key
 
 ```json
-"epoch_num": [16,6,4],
-"augmentation": true,
+"epoches": 12,
+"lr_schedule": [120000, 160000],
 ```
 
 Run train to get results. It takes about 40 hours with 8x Titan-Xp. Run analyze to get mAP curves.

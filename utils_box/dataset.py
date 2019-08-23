@@ -262,6 +262,7 @@ if __name__ == '__main__':
         idx = 3
         print(labels[idx])
         print(boxes[idx][labels[idx]>0])
+        print('avg px:', int(torch.min(locs[:, 2:] - locs[:, :2], dim=1)[0].mean()))
         show_bbox(imgs[idx], boxes[idx], labels[idx], dataset.LABEL_NAMES)
         # show_bbox(imgs[idx], boxes[idx], labels[idx], None)
         break

@@ -9,7 +9,8 @@
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "epoches": 12,
+    "freeze_stages": true,
+    "epoches": 24,
 
     "nbatch_train": 16,
     "nbatch_eval": 16,
@@ -18,13 +19,13 @@
     
     "lr_base": 0.01,
     "lr_gamma": 0.1,
-    "lr_schedule": [60000, 80000],
+    "lr_schedule": [120000, 160000],
     "momentum": 0.9,
     "weight_decay": 0.0001,
 
     "boxarea_th": 32,
     "grad_clip": 3,
     
-    "img_scale_min": 0.85,
+    "img_scale_min": 0.8,
     "augmentation": false
 }
