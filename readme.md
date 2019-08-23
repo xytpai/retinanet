@@ -163,7 +163,7 @@ Run cocoeval and got mAP: **33.1%**
 Like 2 in *train.json* modify key
 
 ```json
-"epoches": 12,
+"epoches": 24,
 "lr_schedule": [120000, 160000],
 ```
 
