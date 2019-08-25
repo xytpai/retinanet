@@ -219,19 +219,19 @@ class Detector(nn.Module):
             # pos-reg
             lb_yxyx = label_box[b][label_select] # [S, 4]
             # Method 1
-            d_yxyx = lb_yxyx - self.view_anchors_yxyx[anchors_pos_mask] # (S, 4)
-            anchors_hw = self.view_anchors_hw[anchors_pos_mask]
-            d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
-            d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
-            targets_reg_b[anchors_pos_mask] = d_yxyx
+            # d_yxyx = lb_yxyx - self.view_anchors_yxyx[anchors_pos_mask] # (S, 4)
+            # anchors_hw = self.view_anchors_hw[anchors_pos_mask]
+            # d_yxyx[:, :2] = d_yxyx[:, :2] / anchors_hw / 0.2
+            # d_yxyx[:, 2:] = d_yxyx[:, 2:] / anchors_hw / 0.2
+            # targets_reg_b[anchors_pos_mask] = d_yxyx
             # Method 2
-            # lb_yx = (lb_yxyx[:, :2] + lb_yxyx[:, 2:]) / 2.0
-            # lb_hw = lb_yxyx[:, 2:] - lb_yxyx[:, :2] + 1
-            # a_yx = self.view_anchors_yx[anchors_pos_mask]
-            # a_hw = self.view_anchors_hw[anchors_pos_mask]
-            # pred_yx = (lb_yx - a_yx) / a_hw
-            # pred_hw = torch.log(lb_hw / a_hw)
-            # targets_reg_b[anchors_pos_mask] = torch.cat([pred_yx / 0.1, pred_hw / 0.2], dim=1)
+            lb_yx = (lb_yxyx[:, :2] + lb_yxyx[:, 2:]) / 2.0
+            lb_hw = lb_yxyx[:, 2:] - lb_yxyx[:, :2] + 1
+            a_yx = self.view_anchors_yx[anchors_pos_mask]
+            a_hw = self.view_anchors_hw[anchors_pos_mask]
+            pred_yx = (lb_yx - a_yx) / a_hw
+            pred_hw = torch.log(lb_hw / a_hw)
+            targets_reg_b[anchors_pos_mask] = torch.cat([pred_yx, pred_hw], dim=1)
             # ignore
             cd1 = self.view_anchors_yx - loc[b, :2]
             cd2 = loc[b, 2:] - self.view_anchors_yx
@@ -261,18 +261,18 @@ class Detector(nn.Module):
         for b in range(cls_out.shape[0]):
             # box transform
             # Method 1
-            reg_dyxyx = reg_out[b]
-            reg_dyxyx[:, :2] = reg_dyxyx[:, :2] * 0.2 * self.view_anchors_hw
-            reg_dyxyx[:, 2:] = reg_dyxyx[:, 2:] * 0.2 * self.view_anchors_hw
-            reg_yxyx = reg_dyxyx + self.view_anchors_yxyx
-            reg_preds.append(reg_yxyx)
+            # reg_dyxyx = reg_out[b]
+            # reg_dyxyx[:, :2] = reg_dyxyx[:, :2] * 0.2 * self.view_anchors_hw
+            # reg_dyxyx[:, 2:] = reg_dyxyx[:, 2:] * 0.2 * self.view_anchors_hw
+            # reg_yxyx = reg_dyxyx + self.view_anchors_yxyx
+            # reg_preds.append(reg_yxyx)
             # Method 2
-            # reg_pyxhw = reg_out[b]
-            # lb_yx = reg_pyxhw[:, :2]  * 0.1 * self.view_anchors_hw + self.view_anchors_yx
-            # lb_hw = (reg_pyxhw[:, 2:] * 0.2).exp() * self.view_anchors_hw
-            # lb_ymin_xmin = lb_yx - lb_hw / 2.0
-            # lb_ymax_xmax = lb_yx + lb_hw / 2.0 - 1
-            # reg_preds.append(torch.cat([lb_ymin_xmin, lb_ymax_xmax], dim=1))
+            reg_pyxhw = reg_out[b]
+            lb_yx = reg_pyxhw[:, :2] * self.view_anchors_hw + self.view_anchors_yx
+            lb_hw = (reg_pyxhw[:, 2:]).exp() * self.view_anchors_hw
+            lb_ymin_xmin = lb_yx - lb_hw / 2.0
+            lb_ymax_xmax = lb_yx + lb_hw / 2.0 - 1
+            reg_preds.append(torch.cat([lb_ymin_xmin, lb_ymax_xmax], dim=1))
             # ignore
             cd1 = self.view_anchors_yx - loc[b, :2]
             cd2 = loc[b, 2:] - self.view_anchors_yx
