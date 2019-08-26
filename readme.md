@@ -129,31 +129,31 @@ It takes about 21 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
 
 ```python
 map_mean
-[0.1094 0.1786 0.1961 0.2203 0.2306 0.2524 0.2529 0.2624 0.3138 0.3196
- 0.3273 0.3281]
+[0.1396 0.2048 0.2267 0.2349 0.2456 0.2594 0.2643 0.2785 0.3255 0.3268
+ 0.3328 0.334 ]
 map_50
-[0.1859 0.2873 0.3091 0.3417 0.362  0.3901 0.3866 0.4077 0.4682 0.4769
- 0.4858 0.4868]
+[0.2542 0.3478 0.3818 0.3868 0.4023 0.4211 0.4275 0.4463 0.506  0.5091
+ 0.5173 0.5178]
 map_75
-[0.1115 0.1865 0.2078 0.234  0.243  0.2671 0.2683 0.2775 0.3347 0.338
- 0.3494 0.3494]
+[0.1361 0.2114 0.2343 0.2488 0.2569 0.2749 0.2785 0.2972 0.348  0.3507
+ 0.3547 0.3564]
 ```
 
-Run cocoeval and got mAP: **33.1%**
+Run cocoeval and got mAP: **33.3%**
 
 ```python
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.331
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.491
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.352
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.174
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.361
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.437
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.277
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.431
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.459
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.271
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.499
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.580
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.333
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.522
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.354
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.169
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.367
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.445
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.275
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.427
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.456
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.262
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.501
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.576
 ```
 
 
