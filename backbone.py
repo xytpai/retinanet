@@ -159,14 +159,16 @@ class ResNet(nn.Module):
             if isinstance(layer, nn.BatchNorm2d):
                 layer.eval()
     
-    def freeze_stages(self):
-        self.bn1.eval()
-        for m in [self.conv1, self.bn1]:
-            for param in m.parameters():
-                param.requires_grad = False
-        self.layer1.eval()
-        for m in self.layer1:
-            for param in m.parameters():
+    def freeze_stages(self, stage):
+        if stage >= 0:
+            self.bn1.eval()
+            for m in [self.conv1, self.bn1]:
+                for param in m.parameters():
+                    param.requires_grad = False
+        for i in range(1, stage + 1):
+            layer = getattr(self, 'layer{}'.format(i))
+            layer.eval()
+            for param in layer.parameters():
                 param.requires_grad = False
 
 

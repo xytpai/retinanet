@@ -31,7 +31,7 @@ First, configure *train.json* file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "freeze_stages": true,
+    "freeze_stages": 1,
     "epoches": 30,
 
     "nbatch_train": 28,
@@ -100,7 +100,7 @@ First, configure train.json file, add your root.
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "freeze_stages": true,
+    "freeze_stages": 1,
     "epoches": 12,
 
     "nbatch_train": 16,
@@ -188,7 +188,7 @@ map_75
  0.37   0.3725 0.3739 0.3731]
 ```
 
-Run cocoeval and got mAP: **35.5%**
+Run cocoeval and got mAP: **35.1%**
 
 ```python
  Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.351

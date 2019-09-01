@@ -95,8 +95,7 @@ if cfg['load']:
 while True:
     if trainer.epoch >= cfg['epoches']:
         break
-    if cfg['freeze_stages']:
-        net.module.backbone.freeze_stages()
+    net.module.backbone.freeze_stages(int(cfg['freeze_stages']))
     if cfg['freeze_bn']:
         net.module.backbone.freeze_bn()
     trainer.step_epoch()

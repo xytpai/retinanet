@@ -9,7 +9,7 @@
     "save": true,
     "pretrain": true,
     "freeze_bn": true,
-    "freeze_stages": true,
+    "freeze_stages": 1,
     "epoches": 12,
 
     "nbatch_train": 16,
