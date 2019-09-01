@@ -7,7 +7,7 @@ https://arxiv.org/abs/1708.02002
 
 This repo achieves **35.1%** mAP at nearly 700px resolution with a Resnet-50 backbone. 
 
-| 600px (paper) | 800px (detectron) | ours (nearly 700px) |
+| paper (600px) | detectron (800px) | ours (nearly 700px) |
 | :--: | :---------: | :--: |
 | 34 | 35.7 | **35.1** |
 
