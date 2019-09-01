@@ -5,7 +5,11 @@ Focal Loss for Dense Object Detection.
 
 https://arxiv.org/abs/1708.02002
 
-This repo achieves **35.5%** mAP at nearly 700px resolution with a Resnet-50 backbone. 
+This repo achieves **35.1%** mAP at nearly 700px resolution with a Resnet-50 backbone. 
+
+| 600px (paper) | 800px (detectron) | ours (nearly 700px) |
+| :--: | :---------: | :--: |
+| 34 | 35.7 | **35.1** |
 
 ![](images/pred_demo.bmp)
 
@@ -171,37 +175,33 @@ Run train to get results. It takes about 40 hours with 8x Titan-Xp. Run analyze 
 
 ```python
 map_mean
-[0.1006 0.1625 0.1857 0.2021 0.2178 0.2302 0.2489 0.2487 0.2469 0.2519
- 0.2549 0.2636 0.2586 0.2681 0.2678 0.268  0.3308 0.3358 0.3385 0.3412
- 0.341  0.344  0.35   0.3507 0.3504 0.3521]
+[0.1373 0.2022 0.2218 0.2404 0.2539 0.2638 0.26   0.2638 0.2783 0.2777
+ 0.2791 0.2865 0.285  0.2762 0.2888 0.2982 0.3398 0.3424 0.345  0.3474
+ 0.3459 0.3489 0.3494 0.3489]
 map_50
-[0.1855 0.2752 0.3094 0.3398 0.3644 0.3784 0.3974 0.3979 0.3987 0.4052
- 0.4131 0.4206 0.418  0.4274 0.4278 0.4246 0.5065 0.5127 0.5147 0.5188
- 0.5202 0.5236 0.5302 0.5311 0.5298 0.5308]
+[0.2521 0.3387 0.3788 0.3994 0.4142 0.426  0.4256 0.4268 0.446  0.4431
+ 0.4511 0.462  0.4533 0.4433 0.4621 0.4688 0.5253 0.5299 0.5315 0.5354
+ 0.5335 0.5375 0.538  0.5378]
 map_75
-[0.1001 0.1715 0.1944 0.2131 0.2285 0.243  0.2647 0.2641 0.2649 0.2688
- 0.269  0.2828 0.2767 0.2882 0.2911 0.2868 0.3544 0.3626 0.3671 0.3686
- 0.3697 0.372  0.3783 0.3783 0.3804 0.3813]
+[0.1364 0.213  0.2323 0.2508 0.2689 0.2782 0.2765 0.2801 0.2952 0.2973
+ 0.2955 0.3054 0.2996 0.2947 0.3091 0.3196 0.3636 0.3666 0.3691 0.3726
+ 0.37   0.3725 0.3739 0.3731]
 ```
 
 Run cocoeval and got mAP: **35.5%**
 
 ```python
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.355
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.536
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.382
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.194
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.391
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.472
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.294
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.454
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.483
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.351
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.541
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.374
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.189
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.385
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.464
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.288
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.445
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.474
  Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.291
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.529
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.612
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.519
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.598
 ```
-
-
-
-
 

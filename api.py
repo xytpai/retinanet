@@ -186,21 +186,22 @@ class Inferencer(object):
         self.normalizer = transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225))
 
 
-    def pred(self, img_tensor):
+    def pred(self, img_pil):
         '''
         all models should be in cuda()
         return cls_i_preds, cls_p_preds, reg_preds
         '''
-        img = self.normalizer(img_tensor)
-        _boxes = torch.zeros(0,4)
-        img, boxes, loc, scale = center_fix(img, _boxes, self.net.view_size)
+        _boxes = torch.zeros(0, 4)
+        img_pil, boxes, loc, scale = center_fix(img_pil, _boxes, self.net.view_size)
+        img = transforms.ToTensor()(img_pil)
+        img = self.normalizer(img).view(1, img.shape[0], img.shape[1], img.shape[2])
         img = img.cuda()
         loc = loc.view(1, -1).cuda()
         with torch.no_grad():
             temp = self.net(img, loc)
             cls_i_preds, cls_p_preds, reg_preds = get_pred(temp, 
                 self.net.nms_th, self.net.nms_iou)
-            reg_preds[0][:, 0] -= loc[0, 0]
-            reg_preds[0][:, 1] -= loc[0, 1]
+            reg_preds[0][:, 0::2] -= loc[0, 0]
+            reg_preds[0][:, 1::2] -= loc[0, 1]
             reg_preds[0] /= scale
         return cls_i_preds[0], cls_p_preds[0], reg_preds[0]

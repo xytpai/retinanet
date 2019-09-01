@@ -6,6 +6,7 @@ from PIL import Image
 import api
 import torchvision.transforms as transforms
 from detector import Detector
+from utils_box.dataset import show_bbox
 
 
 # Read train.json and set current GPU (for nms_cuda) and prepare the network
@@ -42,8 +43,6 @@ for filename in os.listdir('images/'):
         img = Image.open(os.path.join('images/', filename))
         if img.mode != 'RGB':
             img = img.convert('RGB')
-        img = transforms.ToTensor()(img)
-        img_cpy = img.clone()
         cls_i_preds, cls_p_preds, reg_preds = inferencer.pred(img)
         name = 'images/pred_'+filename.split('.')[0]+'.bmp'
-        show_bbox(img_cpy, reg_preds.cpu(), cls_i_preds.cpu(), LABEL_NAMES, name)
+        show_bbox(img, reg_preds.cpu(), cls_i_preds.cpu(), LABEL_NAMES, name)

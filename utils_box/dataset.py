@@ -197,7 +197,8 @@ def show_bbox(img, boxes, labels, NAME_TAB, file_name=None, matplotlib=False):
     NAME_TAB: ['background', 'class_1', 'class_2', ...]
     file_name: 'out.bmp' or None
     '''
-    img = transforms.ToPILImage()(img)
+    if not isinstance(img, Image.Image):
+        img = transforms.ToPILImage()(img)
     drawObj = ImageDraw.Draw(img)
     for box_id in range(boxes.shape[0]):
         lb = int(labels[box_id])
