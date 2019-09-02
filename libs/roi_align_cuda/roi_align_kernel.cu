@@ -77,10 +77,10 @@ __global__ void ROIAlignForward(const int nthreads, const scalar_t *bottom_data,
 
     const scalar_t *offset_bottom_rois = bottom_rois + n * 5;
     int roi_batch_ind = offset_bottom_rois[0];
-    scalar_t roi_start_w = offset_bottom_rois[1] * spatial_scale;
-    scalar_t roi_start_h = offset_bottom_rois[2] * spatial_scale;
-    scalar_t roi_end_w = (offset_bottom_rois[3] + 1) * spatial_scale;
-    scalar_t roi_end_h = (offset_bottom_rois[4] + 1) * spatial_scale;
+    scalar_t roi_start_w = offset_bottom_rois[2] * spatial_scale;
+    scalar_t roi_start_h = offset_bottom_rois[1] * spatial_scale;
+    scalar_t roi_end_w = (offset_bottom_rois[4] + 1) * spatial_scale;
+    scalar_t roi_end_h = (offset_bottom_rois[3] + 1) * spatial_scale;
 
     // Force malformed ROIs to be 1x1
     scalar_t roi_width = fmaxf((scalar_t)roi_end_w - roi_start_w, 0.);
@@ -205,10 +205,10 @@ __global__ void ROIAlignBackward(
 
     const scalar_t *offset_bottom_rois = bottom_rois + n * 5;
     int roi_batch_ind = offset_bottom_rois[0];
-    scalar_t roi_start_w = offset_bottom_rois[1] * spatial_scale;
-    scalar_t roi_start_h = offset_bottom_rois[2] * spatial_scale;
-    scalar_t roi_end_w = (offset_bottom_rois[3] + 1) * spatial_scale;
-    scalar_t roi_end_h = (offset_bottom_rois[4] + 1) * spatial_scale;
+    scalar_t roi_start_w = offset_bottom_rois[2] * spatial_scale;
+    scalar_t roi_start_h = offset_bottom_rois[1] * spatial_scale;
+    scalar_t roi_end_w = (offset_bottom_rois[4] + 1) * spatial_scale;
+    scalar_t roi_end_h = (offset_bottom_rois[3] + 1) * spatial_scale;
 
     // Force malformed ROIs to be 1x1
     scalar_t roi_width = fmaxf((scalar_t)roi_end_w - roi_start_w, 0.);

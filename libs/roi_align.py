@@ -8,9 +8,10 @@ import roi_align_cuda
 class RoIAlignFunction(Function):
     '''
     features:      FloatTensor(b, c, h, w)
-    rois:          FloatTensor(num_rois, 5)
+    rois:          FloatTensor(num_rois, 5) b_index, ymin, xmin, ymax, xmax
     out_size:      int
     spatial_scale: float
+    sample_num:    2 in paper
     '''
 
     @staticmethod
@@ -59,3 +60,30 @@ class RoIAlignFunction(Function):
 
 
 roi_align = RoIAlignFunction.apply
+
+
+
+if __name__ == '__main__':
+    features = torch.Tensor([
+        [
+            [[1,2,3,4],
+             [2,3,4,5],
+             [3,4,5,6],
+             [4,5,6,7]]
+        ]
+    ])
+    ymin_1, xmin_1, ymax_1, xmax_1 = 0, 1, 2, 3
+    ymin_2, xmin_2, ymax_2, xmax_2 = 0, 0, 2, 2
+    roi = torch.Tensor([
+        [0, ymin_1, xmin_1, ymax_1, xmax_1],
+        [0, ymin_2, xmin_2, ymax_2, xmax_2],
+    ])
+    print(features)
+    rois_f = roi_align(features.cuda(), roi.cuda(), 2, 1)
+    print(rois_f.shape)
+    print(rois_f)
+    # tensor([[[[3.5000, 4.6875],
+    #           [5.0000, 6.1875]]],
+    #         [[[2.5000, 4.0000],
+    #           [4.0000, 5.5000]]]], device='cuda:0')
+    pass
