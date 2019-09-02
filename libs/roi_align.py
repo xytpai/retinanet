@@ -7,11 +7,14 @@ import roi_align_cuda
 
 class RoIAlignFunction(Function):
     '''
+    Param:
     features:      FloatTensor(b, c, h, w)
     rois:          FloatTensor(num_rois, 5) b_index, ymin, xmin, ymax, xmax
     out_size:      int
     spatial_scale: float
     sample_num:    2 in paper
+
+    Return:        FloatTensor(num_rois, c, out_size, out_size)
     '''
 
     @staticmethod
