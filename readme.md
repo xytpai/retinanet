@@ -129,7 +129,7 @@ self.view_size = 1025
 self.classes = 80   # TODO: total 80 classes exclude background
 ```
 
-It takes about 21 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
+It takes about 15 hours with 8x Titan-Xp.  Run analyze to get mAP curves.
 
 ```python
 map_mean
@@ -171,7 +171,7 @@ Like 2 in *train.json* modify key
 "lr_schedule": [120000, 160000],
 ```
 
-Run train to get results. It takes about 40 hours with 8x Titan-Xp. Run analyze to get mAP curves.
+Run train to get results. It takes about 30 hours with 8x Titan-Xp. Run analyze to get mAP curves.
 
 ```python
 map_mean
