@@ -62,8 +62,19 @@ loader_eval = torch.utils.data.DataLoader(dataset_eval, batch_size=cfg['nbatch_e
 lr_base = cfg['lr_base']
 lr_gamma = cfg['lr_gamma']
 lr_schedule = cfg['lr_schedule']
-opt = torch.optim.SGD(net.parameters(), lr=lr_base, 
-            momentum=cfg['momentum'], weight_decay=cfg['weight_decay'])
+# opt = torch.optim.SGD(net.parameters(), lr=lr_base, 
+#             momentum=cfg['momentum'], weight_decay=cfg['weight_decay'])
+params = []
+for key, value in net.named_parameters():
+    if not value.requires_grad:
+        continue
+    _lr = lr_base
+    _weight_decay = cfg['weight_decay']
+    if "bias" in key:
+        _lr = lr_base * 2
+        _weight_decay = 0
+    params += [{"params": [value], "lr": _lr, "weight_decay": _weight_decay}]
+opt = torch.optim.SGD(params, lr=_lr, momentum=cfg['momentum'])
 
 
 # Prepare lr_func

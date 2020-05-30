@@ -205,3 +205,12 @@ Run cocoeval and got mAP: **35.1%**
  Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.598
 ```
 
+```txt
+new-1x
+map_mean
+[0.1471 0.2116 0.2318 0.2544]
+map_50
+[0.271  0.3581 0.3845 0.4155]
+map_75
+[0.1448 0.2176 0.2432 0.2707]
+```
